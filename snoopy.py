@@ -1,9 +1,25 @@
+import requests
 import threading
+
+from bs4 import BeautifulSoup
+
 from datetime import datetime, timedelta
 
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
+
+MAIN_POPUP_URL = "https://dart.fss.or.kr/dsaf001/main.do?rcpNo={rcept_no}"
+
+
+def get_dcm_no(_rcept_no):
+    r = requests.get(MAIN_POPUP_URL.format(rcept_no=_rcept_no))
+    for href in BeautifulSoup(r.text, 'lxml').find('div', class_='view_search').find_all('li')[:1]:
+        return href.find('a')['onclick'].split(' ')[1].replace("'", '').replace(');', '')
+
+
+def buy_or_sell(_rcept_no, _dcm_no):
+    pass
 
 
 class Snoopy:
@@ -17,6 +33,9 @@ class Snoopy:
         executive_data = []
         for d in data:
             if d['report_nm'] == '임원ㆍ주요주주특정증권등소유상황보고서' and d['corp_cls'] in ['Y', 'K']:
+                dcm_no = get_dcm_no(d['rcept_no'])
+                print(dcm_no)
+                # signal = buy_or_sell(d['rcept_no'], dcm_no)
                 executive_data.append(d)
 
         return executive_data
@@ -31,9 +50,9 @@ class Snoopy:
         yesterday = (datetime.today() - timedelta(days=1)).strftime('%Y%m%d')
         
         params = {
-            'bgn_de' : yesterday,
-            'end_de' : yesterday,
-            'page_count' : 100
+            'bgn_de': yesterday,
+            'end_de': yesterday,
+            'page_count': 100
         }
 
         response = self.api_manager.get_json('list', params)
@@ -57,9 +76,7 @@ class Snoopy:
 
             data += self.process_data(response['list'])
 
-        
         print(data)
-        
 
 
 if __name__ == "__main__":
