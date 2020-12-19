@@ -134,11 +134,12 @@ class Snoopy:
         executive_data = self.get_executive_data(data)
         parsed = self.parsing(executive_data)
 
-        for rcept in parsed.values():
+        for rcept, detail in parsed.items():
             stock_detail = []
-            for detail in rcept:
-                detail['created_at'] = datetime.now()
-                stock_detail.append(tuple(detail.values()))
+            for d in detail:
+                d['created_at'] = datetime.now()
+                stock_detail.append(tuple(d.values()))
+            self.logger.info(f"DB insert on {rcept}")
             self.db_manager.insert_executive(stock_detail)
 
 
