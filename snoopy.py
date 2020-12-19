@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, date
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
+from manager.utils import REASON_CODE, STOCK_TYPE_CODE
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -51,44 +52,14 @@ class Snoopy:
                 value = td.text
                 if idx == 0:  # 보고사유
                     value = re.compile(r'[ㄱ-ㅣ가-힣]+').findall(value)[0]
-                    reason_code = {
-                        '장내매수': '01',
-                        '장내매도': '02',
-                        '장외매도': '03',
-                        '장외매수': '04',
-                        '신규상장': '05',
-                        '신규선임': '06',
-                        '신규보고': '07',
-                        '합병': '08',
-                        '인수': '09',
-                        '증여': '10',
-                        '무상신주취득': '11',
-                        '유상신주취득': '12',
-                        '주식매수선택권': '13',
-                        '풋옵션권리행사에따른주식처분': '14',
-                        'CB인수': '15',
-                        '시간외매매': '16',
-                        '전환등': '17',
-                        '전환사채의권리행사': '18',
-                        '수증': '19',
-                        '행사가액조정': '20',
-                        '기타': '99'
-                    }
-                    value = value if reason_code.get(value) is None else reason_code.get(value)
+                    value = value if REASON_CODE.get(value) is None else REASON_CODE.get(value)
                     p['reason'] = value
                 elif idx == 1:  # 변동일
                     conver_date = re.compile(r'\d+').findall(value)
                     year, month, day = conver_date[0], conver_date[1], conver_date[2]
                     p['date'] = date(int(year), int(month), int(day))
                 elif idx == 2:  # 증권종류
-                    stock_type_code = {
-                        '보통주': '01',
-                        '우선주': '02',
-                        '전환사채권': '03',
-                        '신주인수권이표시된것': '04',
-                        '신주인수권부사채권': '05'
-                    }
-                    value = value if stock_type_code.get(value) is None else stock_type_code.get(value)
+                    value = value if STOCK_TYPE_CODE.get(value) is None else STOCK_TYPE_CODE.get(value)
                     p['stock_type'] = value
                 elif idx == 3:  # 주식 변동 전
                     p['before'] = int(value.replace(',', '').replace('-', '0'))
