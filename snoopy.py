@@ -2,6 +2,7 @@ import requests
 import threading
 import time
 import re
+import logging
 
 from bs4 import BeautifulSoup
 
@@ -11,6 +12,9 @@ from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
 
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 MAIN_URL = "https://dart.fss.or.kr"
 REPORT = "/dsaf001/main.do?rcpNo={rcept_no}"
 SNOOP = "/report/viewer.do?dtd=dart3.xsd&eleId=4&offset=1&length=1&rcpNo={rcept_no}&dcmNo={dcm_no}"
@@ -18,6 +22,7 @@ SNOOP = "/report/viewer.do?dtd=dart3.xsd&eleId=4&offset=1&length=1&rcpNo={rcept_
 
 class Snoopy:
     def __init__(self):
+        self.logger = logger
         self.db_manager = DbManager()
         self.tg_manager = TgManager()
         self.api_manager = ApiManager()
@@ -110,9 +115,9 @@ class Snoopy:
             dcm_no = self.get_dcm_no(d.get('rcept_no'))
             stock_diff[d.get('rcept_no')] = self.get_stock_detail(d.get('rcept_no'), dcm_no)
 
-            print(f"parsed: {d.get('rcept_no')} -> {i} / {len(data)}")
-            print(stock_diff.get(d.get('rcept_no')))
-            print('--------------------------------------------------------')
+            logger.info(f"parsed: {d.get('rcept_no')} -> {i+1} / {len(data)}")
+            # print(stock_diff.get(d.get('rcept_no')))
+            # print('--------------------------------------------------------')
         
         return stock_diff
 
@@ -147,7 +152,7 @@ class Snoopy:
 
         data, total_page = response['list'], response['total_page']
         for i in range(2, total_page + 1):
-            print(f"current page {i} / {total_page}")
+            logger.info(f"current page {i} / {total_page}")
             time.sleep(0.5)  # to prevent IP ban
             params['page_no'] = i
             response = self.api_manager.get_json('list', params)
@@ -157,6 +162,7 @@ class Snoopy:
             data += response['list']
 
         executive_data = self.get_executive_data(data)
+        print('total data count', len(executive_data))
         parsed = self.parsing(executive_data)
 
         # for p in parsed:
@@ -178,3 +184,8 @@ if __name__ == "__main__":
     # d = [{'report_nm': '임원ㆍ주요주주특정증권등소유상황보고서', 'corp_cls': 'Y', 'rcept_no': '20201218000643'}]
     # response = s.process_data(d)
     # print(response)
+
+    # TODO
+    # 1. db 설계/구성
+    # 2. bulk insert
+    # 3. 날짜 input
