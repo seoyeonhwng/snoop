@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, date
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
-from manager.utils import get_date, filter_text, REASON_CODE, STOCK_TYPE_CODE
+from manager.utils import get_date, convert_valid_format, REASON_CODE, STOCK_TYPE_CODE
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -63,39 +63,22 @@ class Snoopy:
         r = requests.get(MAIN_URL + SNOOP.format(rcept_no=_rcept_no, dcm_no=_dcm_no))
         time.sleep(1)
 
-        tbody = BeautifulSoup(r.text, 'html.parser').find_all('table')[-1:][0].find('tbody')  # get most bottom table
-        for tr in tbody.find_all('tr')[:-1]:  # remove sum row
-            p = self.get_empty_data(_rcept_no, _rcept_dt, _stock_code)
-            for idx, td in enumerate(tr.find_all('td')):
-                value = td.text
-                if idx == 0:  # 보고사유
-                    value = re.compile(r'[ㄱ-ㅣ가-힣]+').findall(value)[0]
-                    value = value if REASON_CODE.get(value) is None else REASON_CODE.get(value)
-                    p['reason_code'] = value
-                elif idx == 1:  # 변동일
-                    conver_date = re.compile(r'\d+').findall(value)
-                    year, month, day = conver_date[0], conver_date[1], conver_date[2]
-                    p['traded_on'] = date(int(year), int(month), int(day))
-                elif idx == 2:  # 증권종류
-                    value = value if STOCK_TYPE_CODE.get(value) is None else STOCK_TYPE_CODE.get(value)
-                    p['stock_type'] = value
-                elif idx == 3:  # 주식 변동 전
-                    p['before_volume'] = int(value.replace(',', '').replace('-', '0'))
-                elif idx == 4:  # 주식 증감
-                    p['delta_volume'] = int(value.replace(',', ''))  # 증감은 단순 - 가 없음
-                elif idx == 5:  # 주식 변동 후
-                    p['after_volume'] = int(value.replace(',', '').replace('-', '0'))
-                elif idx == 6:  # 취득/처분 단가
-                    value = value.replace(',', '').replace('-', '0')
-                    if re.compile(r'\d+').findall(value):
-                        value = int(re.compile(r'\d+').findall(value)[0])
-                    else:
-                        value = 0
-                    p['unit_price'] = value
-                elif idx == 7:  # 비고
-                    p['remark'] = value.replace('-', '').strip()
-            stock_detail.append(p)
+        bs = BeautifulSoup(r.text, 'html.parser')
+        table = bs.findAll(lambda tag: tag.name == 'table')[-1]
+        rows = table.findAll(lambda tag: tag.name == 'tr')
 
+        col_names = ['reason_code', 'traded_on', 'stock_type', 'before_volume', 
+                    'delta_volume', 'after_volume', 'unit_price', 'remark']
+        col_types = ['text', 'date', 'text', 'int', 'int', 'int', 'int', 'text']
+
+        for row in rows[2:-1]:
+            row_content = [r.text for r in row if r.name == 'td']
+            p = self.get_empty_data(_rcept_no, _rcept_dt, _stock_code)
+
+            for text, text_type, c_name in zip(row_content, col_types, col_names):
+                p[c_name] = convert_valid_format(text, text_type)
+            stock_detail.append(p)
+        
         return stock_detail
 
     def parsing(self, data):
@@ -154,11 +137,14 @@ class Snoopy:
 
 if __name__ == "__main__":
     s = Snoopy()
-    s.run()
+    #s.run()
     
-    # r = '20201218000643'
-    # d = '7717867' 2012
-    # s.get_stock_detail(r, d)
+    r = '20201218000643'
+    d = '7717867'
+    s.get_stock_detail(r, d)
+    for t in tmp:
+        print('===========')
+        print(t)
 
     # d = [{'report_nm': '임원ㆍ주요주주특정증권등소유상황보고서', 'corp_cls': 'Y', 'rcept_no': '20201218000643'}]
     # response = s.process_data(d)

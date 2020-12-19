@@ -14,18 +14,17 @@ def get_date(delta):
     date = (datetime.today() + timedelta(days=delta)).strftime('%Y%m%d')
     return date
 
-def filter_text(text, hangeul=True, digit=True):
-    """
-    한글 또는 숫자로 이루어진 데이터만 반환한다.
-    """
-    h_exp = re.compile('[^가-힣]+')
-    d_exp = re.compile('[^0-9]+')
+def convert_valid_format(text, text_type):
+    if text_type == 'text':
+        return re.compile('[^가-힣]+').sub('', text)
 
-    if hangeul:
-        text = h_exp.sub('', text)
-    if digit:
-        text = d_exp.sub('', text)
-    return text
+    if text_type == 'date':
+        text = re.compile('[^0-9]+').sub('', text)
+        return datetime.strptime(text, '%Y%m%d')
+
+    if text_type == 'int':
+        text = '0' if text == '-' else text
+        return int(re.compile('[^-|0-9]+').sub('', text))
 
 
 REASON_CODE = {
