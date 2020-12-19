@@ -1,5 +1,6 @@
 import requests
 import threading
+import time
 
 from bs4 import BeautifulSoup
 
@@ -9,13 +10,21 @@ from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
 
-MAIN_POPUP_URL = "https://dart.fss.or.kr/dsaf001/main.do?rcpNo={rcept_no}"
+MAIN = "https://dart.fss.or.kr"
+POPUP_URL = "/dsaf001/main.do?rcpNo={rcept_no}"
+SNOOP_URL = "/report/viewer.do?dtd=dart3.xsd&eleId=4&offset=1&length=1&rcpNo={rcept_no}&dcmNo={dcm_no}"
 
 
 def get_dcm_no(_rcept_no):
-    r = requests.get(MAIN_POPUP_URL.format(rcept_no=_rcept_no))
+    r = requests.get(MAIN + POPUP_URL.format(rcept_no=_rcept_no))
     for href in BeautifulSoup(r.text, 'lxml').find('div', class_='view_search').find_all('li')[:1]:
         return href.find('a')['onclick'].split(' ')[1].replace("'", '').replace(');', '')
+
+
+def get_stock_diff(_rcept_no, _dcm_no):
+    diff = []
+    r = requests.get(MAIN + SNOOP_URL.format(rcept_no=_rcept_no, dcm_no=_dcm_no))
+    return diff
 
 
 def buy_or_sell(_rcept_no, _dcm_no):
@@ -35,6 +44,7 @@ class Snoopy:
             if d['report_nm'] == '임원ㆍ주요주주특정증권등소유상황보고서' and d['corp_cls'] in ['Y', 'K']:
                 dcm_no = get_dcm_no(d['rcept_no'])
                 print(dcm_no)
+                stock_diff = get_stock_diff(d['rcept_no'], dcm_no)
                 # signal = buy_or_sell(d['rcept_no'], dcm_no)
                 executive_data.append(d)
 
@@ -69,6 +79,7 @@ class Snoopy:
 
         data, total_page = self.process_data(response['list']), response['total_page']
         for i in range(2, total_page + 1):
+            time.sleep(0.5)  # to prevent IP ban
             params['page_no'] = i
             response = self.api_manager.get_json('list', params)
             if response['status'] != '000':
@@ -81,4 +92,8 @@ class Snoopy:
 
 if __name__ == "__main__":
     s = Snoopy()
-    s.run()
+    # s.run()
+
+    d = [{'report_nm': '임원ㆍ주요주주특정증권등소유상황보고서', 'corp_cls': 'Y', 'rcept_no': '20201218000643'}]
+    response = s.process_data(d)
+    print(response)
