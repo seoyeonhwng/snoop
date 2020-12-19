@@ -28,3 +28,11 @@ class DbManager:
               'FROM `company` '
         self.cursor.execute(sql, ())
         return self.cursor.fetchall()
+
+    def insert_executive(self, data):
+        sql = "INSERT INTO `executive` " \
+              "(`rcept_no`, `disclosed_on`, `stock_code`, `reason_code`, `traded_on`, `stock_type`, " \
+              "`before_volume`, `delta_volume`, `after_volume`, `unit_price`, `remark`, `created_at`) " \
+              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        self.cursor.executemany(sql, data)
+        self.commit()

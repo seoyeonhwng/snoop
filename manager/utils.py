@@ -3,9 +3,11 @@ import json
 from datetime import datetime, timedelta
 import re
 
+
 def read_config():
     with open(os.path.dirname(os.path.realpath(__file__)) + '/../config.json', 'r') as _config_file:
         return json.load(_config_file)
+
 
 def get_date(delta):
     """
@@ -13,6 +15,7 @@ def get_date(delta):
     """
     date = (datetime.today() + timedelta(days=delta)).strftime('%Y%m%d')
     return date
+
 
 def convert_valid_format(text, text_type):
     if text_type == 'text':
@@ -24,7 +27,8 @@ def convert_valid_format(text, text_type):
 
     if text_type == 'int':
         text = '0' if text == '-' else text
-        return int(re.compile('[^-|0-9]+').sub('', text))
+        text = re.compile('[^-|0-9]+').sub('', text)  # -(   )인 경우 있음.
+        return 0 if text in ['', '-'] else int(text)
 
 
 REASON_CODE = {

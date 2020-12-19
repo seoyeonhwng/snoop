@@ -1,12 +1,12 @@
+import sys
 import requests
 import threading
 import time
-import re
 import logging
 
 from bs4 import BeautifulSoup
 
-from datetime import datetime, timedelta, date
+from datetime import datetime
 
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
@@ -67,8 +67,8 @@ class Snoopy:
         table = bs.findAll(lambda tag: tag.name == 'table')[-1]
         rows = table.findAll(lambda tag: tag.name == 'tr')
 
-        col_names = ['reason_code', 'traded_on', 'stock_type', 'before_volume', 
-                    'delta_volume', 'after_volume', 'unit_price', 'remark']
+        col_names = ['reason_code', 'traded_on', 'stock_type', 'before_volume',
+                     'delta_volume', 'after_volume', 'unit_price', 'remark']
         col_types = ['text', 'date', 'text', 'int', 'int', 'int', 'int', 'text']
 
         for row in rows[2:-1]:
@@ -76,7 +76,11 @@ class Snoopy:
             p = self.get_empty_data(_rcept_no, _rcept_dt, _stock_code)
 
             for text, text_type, c_name in zip(row_content, col_types, col_names):
+                print(text, text_type, c_name)
                 p[c_name] = convert_valid_format(text, text_type)
+
+            p['reason_code'] = REASON_CODE.get(p['reason_code']) if REASON_CODE.get(p['reason_code']) else p['reason_code']
+            p['stock_type'] = STOCK_TYPE_CODE.get(p['stock_type']) if STOCK_TYPE_CODE.get(p['stock_type']) else p['stock_type']
             stock_detail.append(p)
         
         return stock_detail
@@ -90,15 +94,15 @@ class Snoopy:
             self.logger.info(f"parsed: {d.get('rcept_no')} -> {i+1} / {len(data)}")
         return stock_diff
 
-    def run(self, start_date=None, end_date=None):
-        if not start_date:
-            start_date = get_date(delta=-1)
-        if not end_date:
-            end_date = get_date(delta=-1)
-        
+    def run(self, _start_date=None, _end_date=None):
+        if not _start_date:
+            _start_date = get_date(delta=-1)
+        if not _end_date:
+            _end_date = _start_date
+
         params = {
-            'bgn_de': start_date,
-            'end_de': end_date,
+            'bgn_de': _start_date,
+            'end_de': _end_date,
             'page_count': 100
         }
 
@@ -117,7 +121,7 @@ class Snoopy:
 
         data, total_page = response['list'], response['total_page']
         for i in range(2, total_page + 1):
-            self.logger.info(f"current page {i} / {total_page}")
+            self.logger.info(f"{_start_date}~{_end_date}: current page {i} / {total_page}")
             time.sleep(0.5)  # to prevent IP ban
 
             params['page_no'] = i
@@ -129,28 +133,30 @@ class Snoopy:
 
         executive_data = self.get_executive_data(data)
         parsed = self.parsing(executive_data)
-        
-        for p in parsed.values():
-            print(p)
-            # self.db_manager.insert()
+
+        for rcept in parsed.values():
+            stock_detail = []
+            for detail in rcept:
+                detail['created_at'] = datetime.now()
+                stock_detail.append(tuple(detail.values()))
+            self.db_manager.insert_executive(stock_detail)
 
 
 if __name__ == "__main__":
+    start_date, end_date = None, None
+    if len(sys.argv) == 2:
+        start_date = sys.argv[1]
+        if len(start_date) != 8:
+            print('[WARNING] start_date SHOULD BE LENGTH OF 8')
+            exit(0)
+    elif len(sys.argv) == 3:
+        start_date, end_date = sys.argv[1], sys.argv[2]
+        if (len(start_date) != 8) or (len(end_date) != 8):
+            print('[WARNING] start_date, end_date SHOULD BE LENGTH OF 8')
+            exit(0)
+        if int(start_date) >= int(end_date):
+            print('[WARNING] end_date SHOULD BE LATER THAN start_date')
+            exit(0)
+
     s = Snoopy()
-    #s.run()
-    
-    r = '20201218000643'
-    d = '7717867'
-    s.get_stock_detail(r, d)
-    for t in tmp:
-        print('===========')
-        print(t)
-
-    # d = [{'report_nm': '임원ㆍ주요주주특정증권등소유상황보고서', 'corp_cls': 'Y', 'rcept_no': '20201218000643'}]
-    # response = s.process_data(d)
-    # print(response)
-
-    # TODO
-    # 1. db 설계/구성
-    # 2. bulk insert
-    # 3. 날짜 input
+    s.run(start_date, end_date)
