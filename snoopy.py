@@ -56,7 +56,9 @@ class Snoopy:
         # for c in companies:
         #     print(c)
         # tg_msg = 'Hwangs!!'
-        # threading.Thread(target=self.tg_manager.send_message, args=(tg_msg,)).start()
+        # threading.Thread(target=self.tg_manager.send_msg, args=(tg_msg,)).start()
+        # threading.Thread(target=self.tg_manager.send_warning_msg, args=(tg_msg,)).start()
+
         yesterday = (datetime.today() - timedelta(days=1)).strftime('%Y%m%d')
         
         params = {

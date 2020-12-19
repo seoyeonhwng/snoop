@@ -2,6 +2,8 @@
   "crtfc_key": "",
   "tg_bot_token": "",
   "tg_bot_chat_ids": [],
+  "tg_warning_bot_token": "",
+  "tg_warning_bot_chat_ids": [],
   "mysql": {
       "host": "",
       "user": "",
