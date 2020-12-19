@@ -10,21 +10,21 @@ from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
 
-MAIN = "https://dart.fss.or.kr"
-POPUP_URL = "/dsaf001/main.do?rcpNo={rcept_no}"
-SNOOP_URL = "/report/viewer.do?dtd=dart3.xsd&eleId=4&offset=1&length=1&rcpNo={rcept_no}&dcmNo={dcm_no}"
+MAIN_URL = "https://dart.fss.or.kr"
+REPORT = "/dsaf001/main.do?rcpNo={rcept_no}"
+SNOOP = "/report/viewer.do?dtd=dart3.xsd&eleId=4&offset=1&length=1&rcpNo={rcept_no}&dcmNo={dcm_no}"
 
 
 def get_dcm_no(_rcept_no):
-    r = requests.get(MAIN + POPUP_URL.format(rcept_no=_rcept_no))
+    r = requests.get(MAIN_URL + REPORT.format(rcept_no=_rcept_no))
     for href in BeautifulSoup(r.text, 'lxml').find('div', class_='view_search').find_all('li')[:1]:
         return href.find('a')['onclick'].split(' ')[1].replace("'", '').replace(');', '')
 
 
 def get_stock_diff(_rcept_no, _dcm_no):
-    diff = []
-    r = requests.get(MAIN + SNOOP_URL.format(rcept_no=_rcept_no, dcm_no=_dcm_no))
-    return diff
+    stock_diff = []
+    r = requests.get(MAIN_URL + SNOOP.format(rcept_no=_rcept_no, dcm_no=_dcm_no))
+    return stock_diff
 
 
 def buy_or_sell(_rcept_no, _dcm_no):
