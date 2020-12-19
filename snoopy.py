@@ -16,6 +16,8 @@ from manager.utils import REASON_CODE, STOCK_TYPE_CODE
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+NO_DATA_MSG = "조회된 데이터가 없습니다."
+
 MAIN_URL = "https://dart.fss.or.kr"
 REPORT = "/dsaf001/main.do?rcpNo={rcept_no}"
 SNOOP = "/report/viewer.do?dtd=dart3.xsd&eleId=4&offset=1&length=1&rcpNo={rcept_no}&dcmNo={dcm_no}"
@@ -32,14 +34,14 @@ class Snoopy:
         """
         임원 관련 보고서와 유가, 코스닥 데이터만 가지고 온다.
         """
-        f = lambda x : x['report_nm'] == '임원ㆍ주요주주특정증권등소유상황보고서' and x['corp_cls'] in ['Y', 'K']
+        f = lambda x: x['report_nm'] == '임원ㆍ주요주주특정증권등소유상황보고서' and x['corp_cls'] in ['Y', 'K']
         return [d for d in data if f(d)]
-    
+
     def get_dcm_no(self, _rcept_no):
         r = requests.get(MAIN_URL + REPORT.format(rcept_no=_rcept_no))
         for href in BeautifulSoup(r.text, 'html.parser').find('div', class_='view_search').find_all('li')[:1]:
             return href.find('a')['onclick'].split(' ')[1].replace("'", '').replace(');', '')
-    
+
     def get_stock_detail(self, _rcept_no, _dcm_no):
         stock_detail = []
         r = requests.get(MAIN_URL + SNOOP.format(rcept_no=_rcept_no, dcm_no=_dcm_no))
@@ -86,20 +88,13 @@ class Snoopy:
             dcm_no = self.get_dcm_no(d.get('rcept_no'))
             stock_diff[d.get('rcept_no')] = self.get_stock_detail(d.get('rcept_no'), dcm_no)
 
-            logger.info(f"parsed: {d.get('rcept_no')} -> {i+1} / {len(data)}")
+            self.logger.info(f"parsed: {d.get('rcept_no')} -> {i+1} / {len(data)}")
             # print(stock_diff.get(d.get('rcept_no')))
             # print('--------------------------------------------------------')
         
         return stock_diff
 
     def run(self):
-        # companies = self.db_manager.select_companies()
-        # for c in companies:
-        #     print(c)
-        # tg_msg = 'Hwangs!!'
-        # threading.Thread(target=self.tg_manager.send_msg, args=(tg_msg,)).start()
-        # threading.Thread(target=self.tg_manager.send_warning_msg, args=(tg_msg,)).start()
-
         yesterday = (datetime.today() - timedelta(days=1)).strftime('%Y%m%d')
         
         params = {
@@ -110,20 +105,20 @@ class Snoopy:
 
         response = self.api_manager.get_json('list', params)
         if response['status'] not in ['000', '013']:
-            # error message를 나한테만 알려줬으면 좋겠다..
-            error_msg = f'[ERROR] status code - {response["status"]}'
-            self.tg_manager.send_warning_msg(error_msg)
-            pass
+            tg_msg = f"[ERROR] status code - {response['status']}"
+            self.logger.info(tg_msg)
+            threading.Thread(target=self.tg_manager.send_msg, args=(tg_msg,)).start()
+            return
 
         if response['status'] == '013':
-            # no message -> 오늘 데이터 없습니다. 
-            # 메시지 전송하고 끝!
-            print('no message!!!!!')
-            pass
+            tg_msg = NO_DATA_MSG
+            self.logger.info(tg_msg)
+            threading.Thread(target=self.tg_manager.send_msg, args=(tg_msg,)).start()
+            return
 
         data, total_page = response['list'], response['total_page']
         for i in range(2, total_page + 1):
-            logger.info(f"current page {i} / {total_page}")
+            self.logger.info(f"current page {i} / {total_page}")
             time.sleep(0.5)  # to prevent IP ban
             params['page_no'] = i
             response = self.api_manager.get_json('list', params)
@@ -143,6 +138,7 @@ class Snoopy:
         # for p in parsed.values():
         #     # p : 보고서단위... (3갲)
         #     self.db_manager.insert()
+
 
 if __name__ == "__main__":
     s = Snoopy()
