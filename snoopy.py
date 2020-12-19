@@ -42,40 +42,56 @@ class Snoopy:
         for href in BeautifulSoup(r.text, 'html.parser').find('div', class_='view_search').find_all('li')[:1]:
             return href.find('a')['onclick'].split(' ')[1].replace("'", '').replace(');', '')
 
-    def get_stock_detail(self, _rcept_no, _dcm_no):
+    def get_empty_data(self, _rcept_no, _rcept_dt, _stock_code):
+        p = {
+            'rcept_no': _rcept_no,
+            'disclosed_on': datetime.strptime(_rcept_dt, "%Y%m%d"),
+            'stock_code': _stock_code,
+            'reason_code': '',
+            'traded_on': '',
+            'stock_type': '',
+            'before_volume': '',
+            'delta_volume': '',
+            'after_volume': '',
+            'unit_price': '',
+            'remark': ''
+        }
+        return p
+
+    def get_stock_detail(self, _rcept_no, _dcm_no, _rcept_dt, _stock_code):
         stock_detail = []
         r = requests.get(MAIN_URL + SNOOP.format(rcept_no=_rcept_no, dcm_no=_dcm_no))
         time.sleep(1)
 
         tbody = BeautifulSoup(r.text, 'html.parser').find_all('table')[-1:][0].find('tbody')  # get most bottom table
         for tr in tbody.find_all('tr')[:-1]:  # remove sum row
-            p = {}
+            p = self.get_empty_data(_rcept_no, _rcept_dt, _stock_code)
             for idx, td in enumerate(tr.find_all('td')):
                 value = td.text
                 if idx == 0:  # 보고사유
                     value = re.compile(r'[ㄱ-ㅣ가-힣]+').findall(value)[0]
                     value = value if REASON_CODE.get(value) is None else REASON_CODE.get(value)
-                    p['reason'] = value
+                    p['reason_code'] = value
                 elif idx == 1:  # 변동일
                     conver_date = re.compile(r'\d+').findall(value)
                     year, month, day = conver_date[0], conver_date[1], conver_date[2]
-                    p['date'] = date(int(year), int(month), int(day))
+                    p['traded_on'] = date(int(year), int(month), int(day))
                 elif idx == 2:  # 증권종류
                     value = value if STOCK_TYPE_CODE.get(value) is None else STOCK_TYPE_CODE.get(value)
                     p['stock_type'] = value
                 elif idx == 3:  # 주식 변동 전
-                    p['before'] = int(value.replace(',', '').replace('-', '0'))
+                    p['before_volume'] = int(value.replace(',', '').replace('-', '0'))
                 elif idx == 4:  # 주식 증감
-                    p['delta'] = int(value.replace(',', ''))  # 증감은 단순 - 가 없음
+                    p['delta_volume'] = int(value.replace(',', ''))  # 증감은 단순 - 가 없음
                 elif idx == 5:  # 주식 변동 후
-                    p['after'] = int(value.replace(',', '').replace('-', '0'))
+                    p['after_volume'] = int(value.replace(',', '').replace('-', '0'))
                 elif idx == 6:  # 취득/처분 단가
                     value = value.replace(',', '').replace('-', '0')
                     if re.compile(r'\d+').findall(value):
                         value = int(re.compile(r'\d+').findall(value)[0])
                     else:
                         value = 0
-                    p['price'] = value
+                    p['unit_price'] = value
                 elif idx == 7:  # 비고
                     p['remark'] = value.replace('-', '').strip()
             stock_detail.append(p)
@@ -86,7 +102,7 @@ class Snoopy:
         stock_diff = {}
         for i, d in enumerate(data):
             dcm_no = self.get_dcm_no(d.get('rcept_no'))
-            stock_diff[d.get('rcept_no')] = self.get_stock_detail(d.get('rcept_no'), dcm_no)
+            stock_diff[d.get('rcept_no')] = self.get_stock_detail(d.get('rcept_no'), dcm_no, d.get('rcept_dt'), d.get('stock_code'))
 
             self.logger.info(f"parsed: {d.get('rcept_no')} -> {i+1} / {len(data)}")
         return stock_diff
@@ -131,17 +147,17 @@ class Snoopy:
         executive_data = self.get_executive_data(data)
         parsed = self.parsing(executive_data)
         
-        # for p in parsed.values():
-        #     # p : 보고서단위... (3갲)
-        #     self.db_manager.insert()
+        for p in parsed.values():
+            print(p)
+            # self.db_manager.insert()
 
 
 if __name__ == "__main__":
     s = Snoopy()
-    #s.run()
+    s.run()
     
     # r = '20201218000643'
-    # d = '7717867'
+    # d = '7717867' 2012
     # s.get_stock_detail(r, d)
 
     # d = [{'report_nm': '임원ㆍ주요주주특정증권등소유상황보고서', 'corp_cls': 'Y', 'rcept_no': '20201218000643'}]
