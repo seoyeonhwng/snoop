@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, date
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
-from manager.utils import REASON_CODE, STOCK_TYPE_CODE
+from manager.utils import get_date, filter_text, REASON_CODE, STOCK_TYPE_CODE
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -89,17 +89,17 @@ class Snoopy:
             stock_diff[d.get('rcept_no')] = self.get_stock_detail(d.get('rcept_no'), dcm_no)
 
             self.logger.info(f"parsed: {d.get('rcept_no')} -> {i+1} / {len(data)}")
-            # print(stock_diff.get(d.get('rcept_no')))
-            # print('--------------------------------------------------------')
-        
         return stock_diff
 
-    def run(self):
-        yesterday = (datetime.today() - timedelta(days=1)).strftime('%Y%m%d')
+    def run(self, start_date=None, end_date=None):
+        if not start_date:
+            start_date = get_date(delta=-1)
+        if not end_date:
+            end_date = get_date(delta=-1)
         
         params = {
-            'bgn_de': yesterday,
-            'end_de': yesterday,
+            'bgn_de': start_date,
+            'end_de': end_date,
             'page_count': 100
         }
 
@@ -120,6 +120,7 @@ class Snoopy:
         for i in range(2, total_page + 1):
             self.logger.info(f"current page {i} / {total_page}")
             time.sleep(0.5)  # to prevent IP ban
+
             params['page_no'] = i
             response = self.api_manager.get_json('list', params)
             if response['status'] != '000':
@@ -128,12 +129,7 @@ class Snoopy:
             data += response['list']
 
         executive_data = self.get_executive_data(data)
-        print('total data count', len(executive_data))
         parsed = self.parsing(executive_data)
-
-        # for p in parsed:
-        #     print('--------------------')
-        #     print(p)
         
         # for p in parsed.values():
         #     # p : 보고서단위... (3갲)
@@ -142,11 +138,11 @@ class Snoopy:
 
 if __name__ == "__main__":
     s = Snoopy()
-    s.run()
+    #s.run()
     
     # r = '20201218000643'
     # d = '7717867'
-    # get_stock_diff(r, d)
+    # s.get_stock_detail(r, d)
 
     # d = [{'report_nm': '임원ㆍ주요주주특정증권등소유상황보고서', 'corp_cls': 'Y', 'rcept_no': '20201218000643'}]
     # response = s.process_data(d)

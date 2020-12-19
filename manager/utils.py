@@ -1,10 +1,31 @@
 import os
 import json
-
+from datetime import datetime, timedelta
+import re
 
 def read_config():
     with open(os.path.dirname(os.path.realpath(__file__)) + '/../config.json', 'r') as _config_file:
         return json.load(_config_file)
+
+def get_date(delta):
+    """
+    오늘부터 delta만큼의 날짜를 반환
+    """
+    date = (datetime.today() + timedelta(days=delta)).strftime('%Y%m%d')
+    return date
+
+def filter_text(text, hangeul=True, digit=True):
+    """
+    한글 또는 숫자로 이루어진 데이터만 반환한다.
+    """
+    h_exp = re.compile('[^가-힣]+')
+    d_exp = re.compile('[^0-9]+')
+
+    if hangeul:
+        text = h_exp.sub('', text)
+    if digit:
+        text = d_exp.sub('', text)
+    return text
 
 
 REASON_CODE = {
