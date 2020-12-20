@@ -69,7 +69,7 @@ class Snoopy:
 
         col_names = ['reason_code', 'traded_on', 'stock_type', 'before_volume',
                      'delta_volume', 'after_volume', 'unit_price', 'remark']
-        col_types = ['text', 'date', 'text', 'int', 'int', 'int', 'float', 'text']
+        col_types = ['text', 'date', 'text', 'volume', 'volume', 'volume', 'price', 'text']
 
         for row in rows[2:-1]:
             row_content = [r.text for r in row if r.name == 'td']

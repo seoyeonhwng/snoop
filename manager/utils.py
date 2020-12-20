@@ -25,12 +25,12 @@ def convert_valid_format(text, text_type):
         text = re.compile('[^0-9]+').sub('', text)
         return datetime.strptime(text, '%Y%m%d')
 
-    if text_type == 'int':
+    if text_type == 'volume':
         text = '0' if text == '-' else text
         text = re.compile('(?!^-)[^-|0-9]+').sub('', text)
         return 0 if text in ['', '-'] else int(text)
 
-    if text_type == 'float':
+    if text_type == 'price':
         text = '0.0' if text == '-' else text
         text = re.compile('[^0-9.]').sub('', text)
         return 0.0 if text in ['', '-'] else float(text)
