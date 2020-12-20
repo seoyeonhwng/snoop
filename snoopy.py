@@ -48,11 +48,12 @@ class Snoopy:
             if th and th.text == "보고사유":
                 return t
 
-    def get_empty_data(self, _rcept_no, _rcept_dt, _stock_code):
+    def get_empty_data(self, _rcept_no, _rcept_dt, _stock_code, _executive_name):
         p = {
             'rcept_no': _rcept_no,
             'disclosed_on': datetime.strptime(_rcept_dt, "%Y%m%d"),
             'stock_code': _stock_code,
+            'executive_name': _executive_name,
             'reason_code': '',
             'traded_on': '',
             'stock_type': '',
@@ -64,7 +65,7 @@ class Snoopy:
         }
         return p
 
-    def get_stock_detail(self, _rcept_no, _dcm_no, _rcept_dt, _stock_code):
+    def get_stock_detail(self, _rcept_no, _dcm_no, _rcept_dt, _stock_code, _executive_name):
         stock_detail = []
         r = requests.get(MAIN_URL + SNOOP.format(rcept_no=_rcept_no, dcm_no=_dcm_no))
         time.sleep(1)
@@ -79,7 +80,7 @@ class Snoopy:
 
         for row in rows[2:-1]:
             row_content = [r.text for r in row if r.name == 'td']
-            p = self.get_empty_data(_rcept_no, _rcept_dt, _stock_code)
+            p = self.get_empty_data(_rcept_no, _rcept_dt, _stock_code, _executive_name)
 
             for text, text_type, c_name in zip(row_content, col_types, col_names):
                 print(text, text_type, c_name)
@@ -96,7 +97,8 @@ class Snoopy:
         for i, d in enumerate(data):
             dcm_no = self.get_dcm_no(d.get('rcept_no'))
             self.logger.info(f"parsing: {d.get('rcept_no')} -> {i + 1} / {len(data)}")
-            stock_diff[d.get('rcept_no')] = self.get_stock_detail(d.get('rcept_no'), dcm_no, d.get('rcept_dt'), d.get('stock_code'))
+            stock_diff[d.get('rcept_no')] = self.get_stock_detail(d.get('rcept_no'), dcm_no,
+                                                                  d.get('rcept_dt'), d.get('stock_code'), d.get('flr_nm'))
 
         return stock_diff
 

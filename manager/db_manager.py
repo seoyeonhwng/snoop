@@ -31,8 +31,8 @@ class DbManager:
 
     def insert_executive(self, data):
         sql = "INSERT INTO `executive` " \
-              "(`rcept_no`, `disclosed_on`, `stock_code`, `reason_code`, `traded_on`, `stock_type`, " \
+              "(`rcept_no`, `disclosed_on`, `stock_code`, `executive_name`, `reason_code`, `traded_on`, `stock_type`, " \
               "`before_volume`, `delta_volume`, `after_volume`, `unit_price`, `remark`, `created_at`) " \
-              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         self.cursor.executemany(sql, data)
         self.commit()
