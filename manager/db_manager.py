@@ -36,3 +36,16 @@ class DbManager:
               "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         self.cursor.executemany(sql, data)
         self.commit()
+
+    def insert_user(self, data):
+        sql = "INSERT INTO `user` " \
+              "(`chat_id`, `nickname`, `role`, `is_paid`, `is_active`, `created_at`, `expired_at`, `canceled_at`) " \
+              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+        
+        try:
+            self.cursor.execute(sql, tuple(data.values()))
+            self.commit()
+        except Exception as e:
+            print('Error!!! {}'.format(e))
+            return False
+        return True

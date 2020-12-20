@@ -9,7 +9,7 @@ from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
 from manager.parsing_manager import ParsingManager
-from manager.utils import get_date
+from manager.utils import get_current_time
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ class Snoopy:
 
     def run(self, _start_date=None, _end_date=None):
         if not _start_date:
-            _start_date = get_date(delta=-1)
+            _start_date = get_current_time('%Y%m%d', -1)
         if not _end_date:
             _end_date = _start_date
 
@@ -75,7 +75,7 @@ class Snoopy:
         for rcept, detail in parsed.items():
             stock_detail = []
             for d in detail:
-                d['created_at'] = datetime.now()
+                d['created_at'] = get_current_time()
                 stock_detail.append(tuple(d.values()))
             self.logger.info(f"DB insert on {rcept}")
             self.db_manager.insert_executive(stock_detail)
