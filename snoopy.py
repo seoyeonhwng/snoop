@@ -69,7 +69,7 @@ class Snoopy:
 
         col_names = ['reason_code', 'traded_on', 'stock_type', 'before_volume',
                      'delta_volume', 'after_volume', 'unit_price', 'remark']
-        col_types = ['text', 'date', 'text', 'int', 'int', 'int', 'int', 'text']
+        col_types = ['text', 'date', 'text', 'int', 'int', 'int', 'float', 'text']
 
         for row in rows[2:-1]:
             row_content = [r.text for r in row if r.name == 'td']
@@ -89,9 +89,9 @@ class Snoopy:
         stock_diff = {}
         for i, d in enumerate(data):
             dcm_no = self.get_dcm_no(d.get('rcept_no'))
+            self.logger.info(f"parsing: {d.get('rcept_no')} -> {i + 1} / {len(data)}")
             stock_diff[d.get('rcept_no')] = self.get_stock_detail(d.get('rcept_no'), dcm_no, d.get('rcept_dt'), d.get('stock_code'))
 
-            self.logger.info(f"parsed: {d.get('rcept_no')} -> {i+1} / {len(data)}")
         return stock_diff
 
     def run(self, _start_date=None, _end_date=None):

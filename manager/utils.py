@@ -27,8 +27,13 @@ def convert_valid_format(text, text_type):
 
     if text_type == 'int':
         text = '0' if text == '-' else text
-        text = re.compile('(?!^-)[^0-9.]').sub('', text)  # -(   ), ( - )인 경우 있음.
+        text = re.compile('(?!^-)[^-|0-9]+').sub('', text)
         return 0 if text in ['', '-'] else int(text)
+
+    if text_type == 'float':
+        text = '0.0' if text == '-' else text
+        text = re.compile('[^0-9.]').sub('', text)
+        return 0.0 if text in ['', '-'] else float(text)
 
 
 REASON_CODE = {
