@@ -44,8 +44,8 @@ class Snoopy:
 
     def get_target_table(self, _tables):
         for t in _tables:
-            th = t.findAll(lambda tag: tag.name == 'th')[0]
-            if th.text == "보고사유":
+            th = t.find(lambda tag: tag.name == 'th')
+            if th and th.text == "보고사유":
                 return t
 
     def get_empty_data(self, _rcept_no, _rcept_dt, _stock_code):
@@ -71,7 +71,6 @@ class Snoopy:
 
         bs = BeautifulSoup(r.text, 'html.parser')
         table = self.get_target_table(bs.findAll(lambda tag: tag.name == 'table'))
-        # table = bs.findAll(lambda tag: tag.name == 'table')[-1]
         rows = table.findAll(lambda tag: tag.name == 'tr')
 
         col_names = ['reason_code', 'traded_on', 'stock_type', 'before_volume',
