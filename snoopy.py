@@ -42,6 +42,12 @@ class Snoopy:
         for href in BeautifulSoup(r.text, 'html.parser').find('div', class_='view_search').find_all('li')[:1]:
             return href.find('a')['onclick'].split(' ')[1].replace("'", '').replace(');', '')
 
+    def get_target_table(self, _tables):
+        for t in _tables:
+            th = t.findAll(lambda tag: tag.name == 'th')[0]
+            if th.text == "보고사유":
+                return t
+
     def get_empty_data(self, _rcept_no, _rcept_dt, _stock_code):
         p = {
             'rcept_no': _rcept_no,
@@ -64,7 +70,8 @@ class Snoopy:
         time.sleep(1)
 
         bs = BeautifulSoup(r.text, 'html.parser')
-        table = bs.findAll(lambda tag: tag.name == 'table')[-1]
+        table = self.get_target_table(bs.findAll(lambda tag: tag.name == 'table'))
+        # table = bs.findAll(lambda tag: tag.name == 'table')[-1]
         rows = table.findAll(lambda tag: tag.name == 'tr')
 
         col_names = ['reason_code', 'traded_on', 'stock_type', 'before_volume',
@@ -121,7 +128,7 @@ class Snoopy:
 
         data, total_page = response['list'], response['total_page']
         for i in range(2, total_page + 1):
-            self.logger.info(f"{_start_date}~{_end_date}: current page {i} / {total_page}")
+            self.logger.info(f"{_start_date} ~ {_end_date}: current page {i} / {total_page}")
             time.sleep(0.5)  # to prevent IP ban
 
             params['page_no'] = i
