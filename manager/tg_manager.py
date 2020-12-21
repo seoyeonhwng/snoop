@@ -14,9 +14,6 @@ class TgManager:
         self.warning_bot = telegram.Bot(token=self.cfg.get("tg_warning_bot_token"))
         self.db_manager = DbManager()
 
-        self.chat_ids = self.cfg.get("tg_bot_chat_ids")
-        self.warning_chat_ids = self.cfg.get("tg_warning_bot_chat_ids")
-
     def get_empty_user_data(self, chat_id, nickname):
         user_data = {
             'chat_id': chat_id,
@@ -38,30 +35,30 @@ class TgManager:
 
     def subscribe(self, update, context):
         chat_id, nickname = update.effective_chat.id, ''.join(context.args)
-        user_data = self.get_empty_user_data(chat_id, nickname)
+        if not self.db_manager.is_valid_chatid(chat_id):
+            return context.bot.send_message(chat_id=chat_id, text='이미 구독 중 입니다.')
+        if not self.db_manager.is_valid_nickname(nickname):
+            return context.bot.send_message(chat_id=chat_id, text=f'{nickname}은 이미 사용 중입니다.')
 
+        user_data = self.get_empty_user_data(chat_id, nickname)
         if self.db_manager.insert_user(user_data):
             context.bot.send_message(chat_id=chat_id, text=f"{nickname}님 구독 완료되었습니다!") 
         else:
-            context.bot.send_message(chat_id=chat_id, text=f"{nickname}님 구독 실패하었습니다!") 
+            self.send_warning_message(f"{nickname}님 구독 실패하었습니다!")
+        
+    def send_message(self, targets, message):
+        message += f'\n{get_current_time()}'
+        for target in targets:
+            self.bot.send_message(target, message, timeout=30)
 
-    def send_msg(self, tg_msg):
-        # for u in self.bot.getUpdates():
-        #     print(u)
+    def send_warning_message(self, message):
+        admins = self.db_manager.get_admin()
+        admins = [d.get('chat_id') for d in admins]
 
-        tg_msg += f'\n{datetime.datetime.now()}'
-        for c in self.chat_ids:
-            self.bot.send_message(c, tg_msg, timeout=30)
-
-    def send_warning_msg(self, tg_msg):
-        # for u in self.bot.getUpdates():
-        #     print(u)
-
-        tg_msg += f'\n{datetime.datetime.now()}'
-        for c in self.warning_chat_ids:
-            self.warning_bot.send_message(c, tg_msg, timeout=30)
+        message += f'\n{get_current_time()}'
+        for admin in admins:
+            self.warning_bot.send_message(admin, message, timeout=30)
   
-
     def run(self):
         updater = Updater(token=self.cfg.get("tg_bot_token"))
         dispatcher = updater.dispatcher
