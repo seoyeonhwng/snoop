@@ -60,7 +60,7 @@ class TgManager:
             self.warning_bot.send_message(admin, message, timeout=30)
   
     def run(self):
-        updater = Updater(token=self.cfg.get("tg_bot_token"))
+        updater = Updater(token=self.cfg.get("tg_bot_token"), use_context=True)
         dispatcher = updater.dispatcher
 
         start_handler = CommandHandler('start', self.start)
