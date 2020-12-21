@@ -95,6 +95,7 @@ class ParsingManager:
 
         if text_type == 'price':
             text = '0.0' if text == '-' else text
+            text = text.replace('.', ',', text.count('.') - 1) if text.count('.') > 1 else text # 오타 방지를 위해 마지막 .만 소수점으로 처리
             text = re.compile('[^0-9.]').sub('', text)
             return 0.0 if text in ['', '-'] else float(text)
 
