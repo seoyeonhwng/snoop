@@ -7,6 +7,7 @@ from telegram.ext import Updater, Dispatcher, CommandHandler, ConversationHandle
 
 NICKNAME = 0
 
+
 class TgManager:
     def __init__(self):
         self.cfg = read_config()
@@ -47,7 +48,7 @@ class TgManager:
             self.send_warning_message(f"{nickname}님 구독 실패하었습니다!")
         
     def send_message(self, targets, message):
-        message += f'\n{get_current_time()}'
+        message += f'\n\n{get_current_time()}'
         for target in targets:
             self.bot.send_message(target, message, timeout=30)
 
@@ -55,7 +56,7 @@ class TgManager:
         admins = self.db_manager.get_admin()
         admins = [d.get('chat_id') for d in admins]
 
-        message += f'\n{get_current_time()}'
+        message += f'\n\n{get_current_time()}'
         for admin in admins:
             self.warning_bot.send_message(admin, message, timeout=30)
   

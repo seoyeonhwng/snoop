@@ -1,6 +1,6 @@
 import pymysql.cursors
 
-from manager.utils import read_config, get_current_time
+from manager.utils import read_config
 
 
 class DbManager:
@@ -55,30 +55,30 @@ class DbManager:
         self.cursor.execute(sql, ())
         return self.cursor.fetchall()
 
-    def insert_corporate_infos(self, data):
+    def update_or_insert_corporate(self, data):
         sql = "INSERT INTO `corporate` " \
-              "(`stock_code`, `corp_code`, `corp_name`, `updated_at`) " \
-              "VALUES (%s, %s, %s, %s)"
-        self.cursor.execute(sql, tuple(data.values()))
+              "(`stock_code`, `corp_code`, `corp_name`, `corp_shorten_name`, `industry_code`, `is_validated`, " \
+              "`market`, `market_capitalization`, `market_rank`, `updated_at`) " \
+              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)" \
+              "ON DUPLICATE KEY UPDATE `corp_name` = VALUES(`corp_name`), `industry_code` = VALUES(`industry_code`), `is_validated` = VALUES(`is_validated`), " \
+              "`market` = VALUES(`market`), `market_capitalization` = VALUES(`market_capitalization`), `market_rank` = VALUES(`market_rank`), `updated_at` = VALUES(`updated_at`) "
+        self.cursor.executemany(sql, data)
         self.commit()
 
-    def update_corporate_infos(self, p):
+    def unvalidate_corporates(self):
         sql = 'UPDATE `corporate` ' \
-              'SET `corp_name` = %s, `last_business_date` = %s, `market` = %s, `market_capitalization` = %s, `market_rank` = %s, `updated_at` = %s ' \
-              'WHERE `stock_code` = %s '
-        self.cursor.execute(sql, (
-            p.get('corp_name'), p.get('business_date'), p.get('market'), p.get('market_capitalization'), p.get('market_rank'), p.get('created_at'),
-            p.get('stock_code')))
+              'SET `is_validated` = %s'
+        self.cursor.execute(sql, (False, ))
         self.commit()
 
     def is_valid_nickname(self, nickname):
         sql = "SELECT * FROM user WHERE nickname = %s"
-        self.cursor.execute(sql, (nickname))
+        self.cursor.execute(sql, (nickname, ))
         return False if self.cursor.fetchall() else True
 
     def is_valid_chatid(self, chat_id):
         sql = "SELECT * FROM user WHERE chat_id = %s"
-        self.cursor.execute(sql, (chat_id))
+        self.cursor.execute(sql, (chat_id, ))
         return False if self.cursor.fetchall() else True
 
     def get_targets(self):
@@ -93,16 +93,35 @@ class DbManager:
 
     def get_disclosure_data(self, date):
         sql = "SELECT * FROM executive WHERE disclosed_on = %s AND reason_code IN ('01', '02') AND stock_type IN ('01', '02')"
-        self.cursor.execute(sql, (date))
+        self.cursor.execute(sql, (date, ))
         return self.cursor.fetchall()
 
-    def insert_ticker(self, p):
+    def insert_ticker(self, data):
         sql = "INSERT INTO `ticker` " \
               "(`stock_code`, `business_date`, `open`, `high`, `low`, `close`, `volume`, " \
-              "`quote_volume`, `market_capitalization`, `market_rank`, `market_ratio`, `operating_share`, `created_at`) " \
-              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        self.cursor.execute(sql, (
-            p.get('stock_code'), p.get('business_date'), p.get('open'), p.get('high'), p.get('low'), p.get('close'), p.get('volume'),
-            p.get('quote_volume'), p.get('market_capitalization'), p.get('market_rank'), p.get('market_ratio'), p.get('operating_share'), p.get('created_at'))
-        )
+              "`quote_volume`, `market_capitalization`, `market`, `market_rank`, `market_ratio`, `operating_share`, `created_at`) " \
+              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        self.cursor.executemany(sql, data)
         self.commit()
+
+    def delete_industry(self):
+        sql = "DELETE FROM `industry` "
+        self.cursor.execute(sql)
+        self.commit()
+
+    def insert_industry(self, data):
+        sql = "INSERT INTO `industry` " \
+              "(`industry_code`, `industry_name`, `created_at`) " \
+              "VALUES (%s, %s, %s)"
+        self.cursor.executemany(sql, data)
+        self.commit()
+
+    def select_industry(self):
+        sql = "SELECT * FROM `industry` "
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+
+    def select_ticker_info(self, date):
+        sql = "SELECT * FROM `ticker` WHERE `business_date` = %s "
+        self.cursor.execute(sql, (date, ))
+        return self.cursor.fetchall()

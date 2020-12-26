@@ -1,106 +1,125 @@
-from zipfile import ZipFile
-from io import BytesIO
-import xml.etree.ElementTree as Et
-
+import logging
+import threading
 
 from pykrx import stock
 from manager.utils import get_current_time
 from manager.db_manager import DbManager
+from manager.tg_manager import TgManager
 from manager.dart import Dart
+from manager.naver import Naver
+
+
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+NO_DATA_MSG = "{target_date}에는 거래내역 없습니다."
 
 
 class DataFactory:
     def __init__(self):
+        self.logger = logger
         self.db_manager = DbManager()
+        self.tg_manager = TgManager()
         self.dart = Dart()
+        self.naver = Naver()
 
-    def get_empty_corporate(self, _stock_code, _corp_code, _corp_name):
-        p = {
-            'stock_code': _stock_code,
-            'corp_code': _corp_code,
-            'corp_name': _corp_name,
+    def get_empty_ticker(self, k, v, _market, _target_date, _market_rank):
+        ticker = {
+            'stock_code': k,
+            'business_date': _target_date,
+            'open': v.get('open'),
+            'high': v.get('high'),
+            'low': v.get('low'),
+            'close': v.get('close'),
+            'volume': v.get('volume'),
+            'quote_volume': v.get('quote_volume'),
+            'market_capitalization': v.get('market_capitalization'),
+            'market': _market,
+            'market_rank': _market_rank,
+            'market_ratio': v.get('market_ratio'),
+            'operating_share': v.get('operating_share'),
+            'created_at': get_current_time(),
+        }
+        return ticker
+
+    def get_empty_corporate(self):
+        corporate = {
+            'stock_code': '',
+            'corp_code': '',
+            'corp_name': '',
+            'corp_shorten_name': '',
+            'industry_code': '',
+            'is_validated': False,
+            'market': '',
+            'market_capitalization': '',
+            'market_rank': 0,
             'updated_at': get_current_time()
         }
-        return p
+        return corporate
 
-    def up_to_date_corporates(self):
-        corporates = {d.get('stock_code'): d for d in self.db_manager.get_corporate_infos()}
+    def get_ticker_info(self, _market, _target_date):
+        ticker_df = stock.get_market_ohlcv_by_ticker(_target_date, _market)
+        ticker_df = ticker_df.rename({'종목명': 'corp_name', '시가': 'open', '고가': 'high', '저가': 'low', '종가': 'close',
+                                      '거래량': 'volume', '거래대금': 'quote_volume', '시가총액': 'market_capitalization',
+                                      '시총비중': 'market_ratio', '상장주식수': 'operating_share'}, axis='columns')
+        tickers = ticker_df.sort_values(by='market_capitalization', ascending=False).to_dict('index').items()
+        ticker_info = []
+        for i, (k, v) in enumerate(tickers):
+            ticker = self.get_empty_ticker(k, v, _market, _target_date, i+1)
+            ticker_info.append(tuple(ticker.values()))
+        return ticker_info
 
-        resp = self.dart.get_xml('corpCode', {})
-        with ZipFile(BytesIO(resp.read())) as zf:
-            file_list = zf.namelist()
-            while len(file_list) > 0:
-                file_name = file_list.pop()
-                xml = zf.open(file_name).read().decode()
-                tree = Et.fromstring(xml)
-                stock_list = tree.findall("list")
+    def fill_ticker_corporate(self, _corporates, _target_date):
+        ticker = {d.get('stock_code'): d for d in self.db_manager.select_ticker_info(_target_date)}
 
-                stock_code = [x.findtext("stock_code") for x in stock_list]
-                corp_code = [x.findtext("corp_code") for x in stock_list]
-                corp_name = [x.findtext("corp_name") for x in stock_list]
-
-                for i, company in enumerate(stock_code):
-                    if company.replace(" ", ""):  # stock_code 있는 경우만
-                        target = self.get_empty_corporate(stock_code[i], corp_code[i], corp_name[i])
-                        if corporates and corporates.get(stock_code[i]):
-                            print(f"step1) continue {stock_code[i]} / {corp_name[i]}")
-                            continue
-                        else:
-                            print(f"step1) insert {stock_code[i]} / {corp_name[i]}")
-                            self.db_manager.insert_corporate_infos(target)
-
-    def apply_daily_ticker(self, _target_date):
-        markets = ["KOSPI", "KOSDAQ"]
-        for market in markets:
-            ticker_df = stock.get_market_ohlcv_by_ticker(_target_date, market)
-            ticker_df = ticker_df.rename({'종목명': 'corp_name', '시가': 'open', '고가': 'high', '저가': 'low', '종가': 'close',
-                                          '거래량': 'volume', '거래대금': 'quote_volume', '시가총액': 'market_capitalization',
-                                          '시총비중': 'market_ratio', '상장주식수': 'operating_share'}, axis='columns')
-            # ticker_df = ticker_df.drop('corp_name', axis=1)
-            market_rank = 1
-            for k, v in ticker_df.sort_values(by='market_capitalization', ascending=False).to_dict('index').items():
-                v['stock_code'] = k
-                v['business_date'] = _target_date
-                v['market'] = market
-                v['market_rank'] = market_rank
-                v['created_at'] = get_current_time()
-                market_rank += 1
-                self.db_manager.insert_ticker(v)
-                self.db_manager.update_corporate_infos(v)
+        for c in _corporates:
+            tmp = ticker.get(c.get('stock_code'))
+            if tmp:  # only check 'is_validated'
+                c['is_validated'] = True
+                c['market'] = tmp.get('market')
+                c['market_capitalization'] = tmp.get('market_capitalization')
+                c['market_rank'] = tmp.get('market_rank')
+        return _corporates
 
     def run(self):
-        tg_msg = ""
-        # up to date corporate list from DART (빈껍데기를 만들고)
-        # step1 = "1) up_to_date_corporates"
-        # try:
-        #     self.up_to_date_corporates()
-        # except Exception:
-        #     tg_msg += f"{step1} ERROR\n"
-        #     # send tg_msg
-        # tg_msg += f"{step1} DONE\n"
+        target_date = get_current_time('%Y%m%d', -2)
 
-        # for each market, daily insert ticker / update on company
-        # target_date = get_current_time('%Y%m%d', -1)
-        target_date = '20201224'
-        step2 = "2) apply_daily_ticker"
-        try:
-            self.apply_daily_ticker(target_date)
-        except Exception:
-            tg_msg += f"{step2} ERROR\n"
-            # send tg_msg
-        tg_msg += f"{step2} DONE\n"
+        tg_msg = f"[Data Factory]\n"
+        tickers = stock.get_market_ticker_list(target_date)
+        if not tickers:
+            tg_msg += NO_DATA_MSG.format(target_date=target_date)
+            threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
+            return
 
-        # update industry_code from naver
-        step3 = "3) update industry_code from naver"
-        try:
-            print('update industry_code from naver')
-            # self.apply_daily_ticker(target_date)
-        except Exception:
-            tg_msg += f"{step3} ERROR\n"
-            # send tg_msg
-        tg_msg += f"{step3} DONE\n"
+        # step1. all delete/insert industry code from naver
+        self.naver.update_industry()
+        self.logger.info(f"[step1] update_industry from naver")
+
+        # step2. bulk insert ticker
+        markets = ["KOSPI", "KOSDAQ"]
+        for market in markets:
+            tickers = self.get_ticker_info(market, target_date)
+            self.db_manager.insert_ticker(tickers)
+        self.logger.info(f"[step2] bulk insert ticker")
+
+        # step3. bulk insert corporate
+        self.db_manager.unvalidate_corporates()
+        corporates = self.dart.build_corporate_list(self.get_empty_corporate())  # from dart
+        corporates = self.naver.fill_industry_corporate(corporates)  # from naver
+        corporates = self.fill_ticker_corporate(corporates, target_date)  # from ticker
+        self.db_manager.update_or_insert_corporate([tuple(c.values()) for c in corporates])
+        self.logger.info(f"[step3] bulk insert corporate")
+
+        # step4. get executive data
+
+        tg_msg += f"{target_date} Data Factory Loaded!"
+        threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
 
 
 if __name__ == "__main__":
     d = DataFactory()
     d.run()
+
+    # TODO. executive ==> data_factory
+    # TODO. db_manager 코드 정리
+    # TODO. 9시 msg

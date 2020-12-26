@@ -5,9 +5,15 @@ import re
 import json
 from urllib.request import urlopen
 from datetime import datetime
+from copy import deepcopy
+
+from zipfile import ZipFile
+from io import BytesIO
+import xml.etree.ElementTree as Et
 
 from bs4 import BeautifulSoup
 
+from manager.db_manager import DbManager
 from manager.utils import read_config
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
@@ -90,6 +96,7 @@ class Dart:
         self.logger = logger
         self.session = requests.session()
         self.crtfc_key = read_config().get('crtfc_key')
+        self.db_manager = DbManager()
 
     def get_json(self, api, p):
         p['crtfc_key'] = self.crtfc_key
@@ -187,3 +194,27 @@ class Dart:
                                                                   d.get('rcept_dt'), d.get('stock_code'), d.get('flr_nm'))
 
         return stock_diff
+
+    def build_corporate_list(self, base_corporate):
+        corporates = []
+        resp = self.get_xml('corpCode', {})
+        with ZipFile(BytesIO(resp.read())) as zf:
+            file_list = zf.namelist()
+            while len(file_list) > 0:
+                file_name = file_list.pop()
+                xml = zf.open(file_name).read().decode()
+                tree = Et.fromstring(xml)
+                stock_list = tree.findall("list")
+
+                stock_code = [x.findtext("stock_code") for x in stock_list]
+                corp_code = [x.findtext("corp_code") for x in stock_list]
+                corp_name = [x.findtext("corp_name") for x in stock_list]
+
+                for sc, cc, cn in zip(stock_code, corp_code, corp_name):
+                    if sc.replace(" ", ""):  # stock_code 있는 경우만
+                        base = deepcopy(base_corporate)
+                        base['stock_code'] = sc
+                        base['corp_code'] = cc
+                        base['corp_name'] = cn
+                        corporates.append(base)
+                return corporates
