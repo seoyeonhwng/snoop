@@ -10,46 +10,31 @@ BASE_URL = 'https://m.stock.naver.com/sise'
 
 class Naver:
     def __init__(self):
-        self.db_manager = DbManager()
+        #self.db_manager = DbManager()
+        pass
 
-    def __get_industry_list(self):
-        resp = requests.get(f'{BASE_URL}/siseList.nhn?menu=upjong')
+    def get_industry_list(self):
+        url = 'https://finance.naver.com/sise/sise_group.nhn?type=upjong'
+        resp = requests.get(url)
         if resp.status_code != 200:
             print('[ERROR] status code != 200 in get_industry_list')
             return
+        
+        exp = r'<a href="/sise/sise_group_detail.nhn\?type=upjong&no=([0-9]+)">(.+)</a>'
+        data = re.findall(exp, resp.text)
 
-        data = re.findall(r'var jsonData = (.+);', resp.text)
-        if not data:
-            print('[ERROR] no jsonData in get_industry_list')
-            return
- 
-        industry_list = []
-        for d in json.loads(data[0]).get('result').get('groupList'):
-            p = {
-                'industry_code': d.get('no'),
-                'industry_name': d.get('nm'),
-                'created_at': get_current_time()
-            }
-            industry_list.append(tuple(p.values()))
+        industry_list = [d + (get_current_time(), ) for d in data]
         return industry_list
-
-    def __get_industry_corporates_list(self, industry_code):
-        resp = requests.get(f'{BASE_URL}/siseGroupDetail.nhn?menu=upjong&no={industry_code}')
+    
+    def get_industry_corporates_list(self, industry_code):
+        url = f'https://finance.naver.com/sise/sise_group_detail.nhn?type=upjong&no={industry_code}'
+        resp = requests.get(url)
         if resp.status_code != 200:
             print('[ERROR] status code != 200 in get_industry_corporates_list')
             return
-
-        data = re.findall(r'var jsonData = (.+);', resp.text)
-        if not data:
-            print('[ERROR] no jsonData in get_industry_corporates_list')
-            return
-
-        corporates_list = []
-        for d in json.loads(data[0]).get('result').get('itemList'):
-            corporates_list.append({
-                'stock_code': d.get('cd'),
-                'corp_name': d.get('nm')
-            })
+        
+        exp = r'<a href="/item/main.nhn\?code=([0-9]+)">(.+)</a>'
+        corporates_list = re.findall(exp, resp.text)
         return corporates_list
 
     def update_industry(self):
