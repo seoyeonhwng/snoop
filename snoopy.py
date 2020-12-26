@@ -3,13 +3,12 @@ import threading
 import time
 import logging
 
-from datetime import datetime
 import collections
 
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
-from manager.parsing_manager import ParsingManager
+from manager.dart import Dart
 from manager.utils import get_current_time
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
@@ -25,7 +24,7 @@ class Snoopy:
         self.db_manager = DbManager()
         self.tg_manager = TgManager()
         self.api_manager = ApiManager()
-        self.parsing_manager = ParsingManager()
+        self.dart = Dart()
 
     def __get_executive_data(self, data):
         """
@@ -37,10 +36,10 @@ class Snoopy:
     def __parse_disclosure_data(self):
         data = self.db_manager.get_disclosure_data(get_current_time('%Y-%m-%d', -1))
         disclosure_data = {d.get('rcept_no'):d for d in data}
-       
+
         company_infos = self.db_manager.get_company_infos()
         company_infos = {c.get('stock_code'):c for c in company_infos}
-        
+
         parsed_data = collections.defaultdict(int)
         for data in disclosure_data.values():
             company_name = company_infos.get(data.get('stock_code')).get('name')
@@ -99,7 +98,7 @@ class Snoopy:
             data += response['list']
 
         executive_data = self.__get_executive_data(data)
-        parsed = self.parsing_manager.parsing(executive_data)
+        parsed = self.dart.parsing(executive_data)
 
         for rcept, detail in parsed.items():
             stock_detail = []
@@ -108,7 +107,7 @@ class Snoopy:
                 stock_detail.append(tuple(d.values()))
             self.logger.info(f"DB insert on {rcept}")
             self.db_manager.insert_executive(stock_detail)
-        
+
         threading.Thread(target=self.tg_manager.send_warning_message, args=(FINISH_MSG,)).start()
 
     def send_daily_notice(self):
@@ -117,13 +116,12 @@ class Snoopy:
 
         parsed_data = self.__parse_disclosure_data()
         message = self.__generate_message(parsed_data)
-     
+
         self.tg_manager.send_message(targets, message)
 
     def run(self):
         print('==== RUN ====')
         self.tg_manager.run()
-        
 
 
 if __name__ == "__main__":

@@ -1,4 +1,3 @@
-import time
 import pymysql.cursors
 
 from manager.utils import read_config, get_current_time
@@ -35,7 +34,7 @@ class DbManager:
         sql = "INSERT INTO `user` " \
               "(`chat_id`, `nickname`, `role`, `is_paid`, `is_active`, `created_at`, `expired_at`, `canceled_at`) " \
               "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        
+
         try:
             self.cursor.execute(sql, tuple(data.values()))
             self.commit()
@@ -44,11 +43,33 @@ class DbManager:
             return False
         return True
 
-    def get_company_infos(self):
+    def get_company_infos(self):  # to be deprecated
         sql = 'SELECT `stock_code`, `corp_code`, `name` ' \
               'FROM `company` '
         self.cursor.execute(sql, ())
         return self.cursor.fetchall()
+
+    def get_corporate_infos(self):
+        sql = 'SELECT `stock_code`, `corp_code`, `corp_name` ' \
+              'FROM `corporate` '
+        self.cursor.execute(sql, ())
+        return self.cursor.fetchall()
+
+    def insert_corporate_infos(self, data):
+        sql = "INSERT INTO `corporate` " \
+              "(`stock_code`, `corp_code`, `corp_name`, `updated_at`) " \
+              "VALUES (%s, %s, %s, %s)"
+        self.cursor.execute(sql, tuple(data.values()))
+        self.commit()
+
+    def update_corporate_infos(self, p):
+        sql = 'UPDATE `corporate` ' \
+              'SET `corp_name` = %s, `last_business_date` = %s, `market` = %s, `market_capitalization` = %s, `market_rank` = %s, `updated_at` = %s ' \
+              'WHERE `stock_code` = %s '
+        self.cursor.execute(sql, (
+            p.get('corp_name'), p.get('business_date'), p.get('market'), p.get('market_capitalization'), p.get('market_rank'), p.get('created_at'),
+            p.get('stock_code')))
+        self.commit()
 
     def is_valid_nickname(self, nickname):
         sql = "SELECT * FROM user WHERE nickname = %s"
@@ -74,3 +95,14 @@ class DbManager:
         sql = "SELECT * FROM executive WHERE disclosed_on = %s AND reason_code IN ('01', '02') AND stock_type IN ('01', '02')"
         self.cursor.execute(sql, (date))
         return self.cursor.fetchall()
+
+    def insert_ticker(self, p):
+        sql = "INSERT INTO `ticker` " \
+              "(`stock_code`, `business_date`, `open`, `high`, `low`, `close`, `volume`, " \
+              "`quote_volume`, `market_capitalization`, `market_rank`, `market_ratio`, `operating_share`, `created_at`) " \
+              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        self.cursor.execute(sql, (
+            p.get('stock_code'), p.get('business_date'), p.get('open'), p.get('high'), p.get('low'), p.get('close'), p.get('volume'),
+            p.get('quote_volume'), p.get('market_capitalization'), p.get('market_rank'), p.get('market_ratio'), p.get('operating_share'), p.get('created_at'))
+        )
+        self.commit()

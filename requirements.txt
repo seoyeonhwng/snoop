@@ -3,3 +3,5 @@ python-telegram-bot
 PyMySQL
 beautifulsoup4
 lxml
+pandas
+pykrx
