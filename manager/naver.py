@@ -2,10 +2,12 @@ import requests
 import re
 import json
 
+from manager.db_manager import DbManager
+
 BASE_URL = 'https://m.stock.naver.com/sise'
 class Naver:
     def __init__(self):
-        pass
+        self.db_manager = DbManager()
 
     def __get_industry_list(self):
         resp = requests.get(f'{BASE_URL}/siseList.nhn?menu=upjong')
@@ -45,12 +47,16 @@ class Naver:
             })
         return corporates_list
 
-    def run(self):
-        # 1. industry 테이블을 업데이트
-        # 2. corporates 테이블을 row를 업데이트
+    def update_industry(self):
+        # industry 테이블을 업데이트
+        industry_list = self.__get_industry_list()
+        pass
+
+    def update_industry_code(self):
+        # corporates 테이블을 row를 업데이트
         # corporates DB에 industry_code를 채운다.(update)
         # industry별로 업데이트
-        industry_list = self.__get_industry_list()
+        
         pass
 
 
