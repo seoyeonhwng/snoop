@@ -46,22 +46,22 @@ class Snoopy:
     def __generate_message(self, data, target_date):
         message = '## Hi! Im Snoopy :)\n\n'
         message += f'* {target_date} / 코스피, 코스닥 대상\n'
-        message += '* 공시횟수 내림차순\n\n\n'
+        message += '* 공시횟수, 시가총액 내림차순\n\n\n'
 
         if not data:
             message += f'{NO_DATA_MSG}\n'
             return message
 
         industry_corporates = collections.defaultdict(list)
-        for d in sorted(data, key=lambda data:data['count'], reverse=True):
+        for d in sorted(data, key=lambda data:(data['count'], int(data['market_capitalization'])), reverse=True):
             industry_corporates[d['industry_name']].append(d)
 
         for industry_name, corps in industry_corporates.items():
-            message += f'<{industry_name}>\n'
+            message += f'[{industry_name}]\n'
             for c in corps:
                 market = '코스피' if c['market'] == 'KOSPI' else '코스닥'
-                cap_info = f'{market}{self.__get_markget_cap(c["market_rank"])}'
-                message += f'. {c["corp_name"]} ({c["count"]}건, {cap_info})\n'
+                cap_info = f'{market} / {self.__get_markget_cap(c["market_rank"])}'
+                message += f'. {c["corp_name"]} ({c["count"]}건 / {cap_info})\n'
             message += '\n'
 
         return message
