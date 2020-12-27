@@ -48,9 +48,9 @@ class TgManager:
             self.send_warning_message(f"{nickname}님 구독 실패하었습니다!")
         
     def send_message(self, targets, message):
-        message += f'\n\n{get_current_time()}'
+        message += '\n\n' + str(get_current_time()).replace('-', '\-').replace('.', '\.')
         for target in targets:
-            self.bot.send_message(target, message, timeout=30)
+            self.bot.send_message(target, message, timeout=30, parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
     def send_warning_message(self, message):
         admins = self.db_manager.get_admin()

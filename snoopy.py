@@ -24,7 +24,6 @@ class Snoopy:
         self.db_manager = DbManager()
         self.tg_manager = TgManager()
         self.api_manager = ApiManager()
-        self.dart = Dart()
 
     def __get_executive_data(self, data):
         """
@@ -33,21 +32,10 @@ class Snoopy:
         f = lambda x: x.get('report_nm') == '임원ㆍ주요주주특정증권등소유상황보고서' and x.get('corp_cls') in ['Y', 'K']
         return [d for d in data if f(d)]
 
-    def __get_markget_cap(self, rank):
-        if not rank:
-            return '小'
-
-        if rank <= 100:
-            return '大'
-        if rank <= 300:
-            return '中'
-        return '小'
-
     def __generate_message(self, data, target_date):
-        message = '## Hi! Im Snoopy :)\n\n'
-        message += f'* {target_date} / 코스피, 코스닥 대상\n'
-        message += f'* 大/中/小: 시가총액규모별지수\n'
-        message += f'* 공시횟수, 시가총액 내림차순\n\n\n'
+        message = '*\#\# 임원/주요주주 주식변동 기업*\n\n'
+        message += f'\*\* {target_date} / KOSPI, KOSDAQ 대상\n'
+        message += f'\*\* 공시횟수, 시가총액 내림차순\n\n\n'
 
         if not data:
             message += f'{NO_DATA_MSG}\n'
@@ -58,11 +46,10 @@ class Snoopy:
             industry_corporates[d['industry_name']].append(d)
 
         for industry_name, corps in industry_corporates.items():
-            message += f'[{industry_name}]\n'
+            message += f'\[*{industry_name}*\]\n'
             for c in corps:
-                market = '코스피' if c['market'] == 'KOSPI' else '코스닥'
-                cap_info = f'{market} / {self.__get_markget_cap(c["market_rank"])}'
-                message += f'. {c["corp_name"]} ({c["count"]}건 / {cap_info})\n'
+                cap_info = f'_{c["market"]}_ {c["market_rank"]}위'
+                message += f'\. {c["corp_name"]} \({cap_info}\) \- {c["count"]}건\n'
             message += '\n'
 
         return message
