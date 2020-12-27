@@ -23,7 +23,8 @@ class Ticker:
             for market in markets:
                 print(f"[ticker] requesting for {_start_date} / {market}")
                 tickers = self.data_factory.get_ticker_info(market, _start_date.strftime('%Y%m%d'))
-                self.db_manager.insert_ticker(tickers)
+                if not self.db_manager.insert_bulk_row('ticker', tickers):
+                    return
                 time.sleep(0.3)
             _start_date = _start_date + timedelta(days=1)
         print(f"[ticker] {_init_start_date} ~ {_end_date.strftime('%Y%m%d')} loaded")

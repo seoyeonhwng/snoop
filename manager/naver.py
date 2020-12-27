@@ -21,7 +21,14 @@ class Naver:
         exp = r'<a href="/sise/sise_group_detail.nhn\?type=upjong&no=([0-9]+)">(.+)</a>'
         data = re.findall(exp, resp.text)
 
-        industry_list = [d + (get_current_time(), ) for d in data]
+        industry_list = []
+        for d in data:
+            p = {
+                'industry_code': d[0],
+                'industry_name': d[1],
+                'created_at': get_current_time()
+            }
+            industry_list.append(p)
         return industry_list
     
     def __get_industry_corporates_list(self, industry_code):
@@ -36,8 +43,9 @@ class Naver:
         return corporates_list
 
     def update_industry(self):
-        self.db_manager.delete_industry()
-        self.db_manager.insert_industry(self.__get_industry_list())
+        self.db_manager.delete_table('industry')
+        if not self.db_manager.insert_bulk_row('industry', self.__get_industry_list()):
+            return
 
     def fill_industry_corporate(self, _corporates):
         industry_list = self.db_manager.select_industry()

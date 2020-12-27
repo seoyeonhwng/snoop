@@ -42,7 +42,7 @@ class TgManager:
             return context.bot.send_message(chat_id=chat_id, text=f'{nickname}은 이미 사용 중입니다.')
 
         user_data = self.get_empty_user_data(chat_id, nickname)
-        if self.db_manager.insert_user(user_data):
+        if self.db_manager.insert_bulk_row('user', user_data):
             context.bot.send_message(chat_id=chat_id, text=f"{nickname}님 구독 완료되었습니다!") 
         else:
             self.send_warning_message(f"{nickname}님 구독 실패하었습니다!")

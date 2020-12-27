@@ -177,7 +177,8 @@ class Dart:
             'delta_volume': '',
             'after_volume': '',
             'unit_price': '',
-            'remark': ''
+            'remark': '',
+            'created_at': get_current_time()
         }
         return p
 
@@ -293,9 +294,9 @@ class Dart:
         for rcept, detail in parsed.items():
             stock_detail = []
             for d in detail:
-                d['created_at'] = get_current_time()
-                stock_detail.append(tuple(d.values()))
-            self.logger.info(f"DB insert on {rcept}")
-            self.db_manager.insert_executive(stock_detail)
+                stock_detail.append(d)
+            self.logger.debug(f"DB insert on {rcept}")
+            if not self.db_manager.insert_bulk_row('executive', stock_detail):  # 공시번호 단위 bulk insert
+                return
 
         threading.Thread(target=self.tg_manager.send_warning_message, args=(FINISH_MSG,)).start()

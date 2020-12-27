@@ -65,8 +65,7 @@ class DataFactory:
         tickers = ticker_df.sort_values(by='market_capitalization', ascending=False).to_dict('index').items()
         ticker_info = []
         for i, (k, v) in enumerate(tickers):
-            ticker = self.get_empty_ticker(k, v, _market, _target_date, i+1)
-            ticker_info.append(tuple(ticker.values()))
+            ticker_info.append(self.get_empty_ticker(k, v, _market, _target_date, i+1))
         return ticker_info
 
     def fill_ticker_corporate(self, _corporates, _target_date):
@@ -83,6 +82,7 @@ class DataFactory:
 
     def run(self):
         target_date = get_current_time('%Y%m%d', -1)
+        self.logger.info(f"{target_date} Data Factory Start!")
 
         tg_msg = f"[Data Factory]\n"
         tickers = stock.get_market_ticker_list(target_date)
@@ -99,7 +99,8 @@ class DataFactory:
         markets = ["KOSPI", "KOSDAQ"]
         for market in markets:
             tickers = self.get_ticker_info(market, target_date)
-            self.db_manager.insert_ticker(tickers)
+            if not self.db_manager.insert_bulk_row('ticker', tickers):
+                return
         self.logger.info(f"[step2] bulk insert ticker")
 
         # step3. bulk insert corporate
@@ -121,7 +122,3 @@ class DataFactory:
 if __name__ == "__main__":
     d = DataFactory()
     d.run()
-
-    # TODO. executive ==> data_factory(O)
-    # TODO. db_manager 코드 정리
-    # TODO. 9시 msg
