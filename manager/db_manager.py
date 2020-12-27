@@ -37,12 +37,6 @@ class DbManager:
             return False
         return True
 
-    def unvalidate_corporates(self):
-        sql = 'UPDATE `corporate` ' \
-              'SET `is_validated` = %s'
-        self.cursor.execute(sql, (False, ))
-        self.commit()
-
     def update_or_insert_corporate(self, data):
         sql = "INSERT INTO `corporate` " \
               "(`stock_code`, `corp_code`, `corp_name`, `corp_shorten_name`, `industry_code`, `is_validated`, " \
@@ -53,16 +47,32 @@ class DbManager:
         self.cursor.executemany(sql, data)
         self.commit()
 
-    def get_company_infos(self):  # to be deprecated
-        sql = 'SELECT `stock_code`, `corp_code`, `name` ' \
-              'FROM `company` '
-        self.cursor.execute(sql, ())
+    def get_disclosure_data(self, date):
+        sql = "SELECT stock_code, corp_name, market, market_rank, industry_name, count(*) AS count " \
+              "FROM (SELECT e.rcept_no, e.stock_code, c.corp_name, c.market, c.market_rank, i.industry_name " \
+              "FROM dtnn.executive AS e LEFT JOIN dtnn.corporate AS c ON e.stock_code = c.stock_code " \
+              "LEFT JOIN dtnn.industry AS i ON c.industry_code = i.industry_code " \
+              "WHERE e.disclosed_on = %s AND e.reason_code IN ('01', '02') " \
+              "AND e.stock_type IN ('01', '02') " \
+              "GROUP BY e.rcept_no, e.stock_code, c.corp_name, c.market, c.market_rank, i.industry_name) " \
+              "AS daily_exe GROUP BY stock_code, corp_name, market, market_rank, industry_name"
+        self.cursor.execute(sql, (date,))
         return self.cursor.fetchall()
 
-    def get_corporate_infos(self):
-        sql = 'SELECT `stock_code`, `corp_code`, `corp_name` ' \
-              'FROM `corporate` '
-        self.cursor.execute(sql, ())
+    def unvalidate_corporates(self):
+        sql = 'UPDATE `corporate` ' \
+              'SET `is_validated` = %s'
+        self.cursor.execute(sql, (False, ))
+        self.commit()
+
+    def select_industry(self):
+        sql = "SELECT * FROM `industry` "
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+
+    def select_ticker_info(self, date):
+        sql = "SELECT * FROM `ticker` WHERE `business_date` = %s "
+        self.cursor.execute(sql, (date, ))
         return self.cursor.fetchall()
 
     def is_valid_nickname(self, nickname):
@@ -83,26 +93,4 @@ class DbManager:
     def get_admin(self):
         sql = "SELECT chat_id FROM user WHERE role = '01'"
         self.cursor.execute(sql)
-        return self.cursor.fetchall()
-
-    def select_industry(self):
-        sql = "SELECT * FROM `industry` "
-        self.cursor.execute(sql)
-        return self.cursor.fetchall()
-
-    def select_ticker_info(self, date):
-        sql = "SELECT * FROM `ticker` WHERE `business_date` = %s "
-        self.cursor.execute(sql, (date, ))
-        return self.cursor.fetchall()
-
-    def get_disclosure_data(self, date):
-        sql = "SELECT stock_code, corp_name, market, market_rank, industry_name, count(*) AS count " \
-              "FROM (SELECT e.rcept_no, e.stock_code, c.corp_name, c.market, c.market_rank, i.industry_name " \
-              "FROM dtnn.executive AS e LEFT JOIN dtnn.corporate AS c ON e.stock_code = c.stock_code " \
-              "LEFT JOIN dtnn.industry AS i ON c.industry_code = i.industry_code " \
-              "WHERE e.disclosed_on = %s AND e.reason_code IN ('01', '02') " \
-              "AND e.stock_type IN ('01', '02') " \
-              "GROUP BY e.rcept_no, e.stock_code, c.corp_name, c.market, c.market_rank, i.industry_name) " \
-              "AS daily_exe GROUP BY stock_code, corp_name, market, market_rank, industry_name"
-        self.cursor.execute(sql, (date,))
         return self.cursor.fetchall()

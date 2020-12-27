@@ -35,7 +35,7 @@ class Snoopy:
 
     def __get_markget_cap(self, rank):
         if not rank:
-            return '小ㄴㄴ'
+            return '小'
 
         if rank <= 100:
             return '大'
@@ -45,8 +45,8 @@ class Snoopy:
 
     def __generate_message(self, data):
         message = '## Hi! Im Snoopy :)\n\n'
-        message += f'* {get_current_time("%Y.%m.%d", -3)} 기준\n* 코스피, 코스닥 대상\n'
-        message += '* 발생횟수 내림차순\n\n\n'
+        message += f'* {get_current_time("%Y.%m.%d", -1)} / 코스피, 코스닥 대상\n'
+        message += '* 공시횟수 내림차순\n\n\n'
 
         if not data:
             message += f'{NO_DATA_MSG}\n'
@@ -65,55 +65,6 @@ class Snoopy:
             message += '\n'
 
         return message
-
-    def load_data(self, _start_date=None, _end_date=None):
-        if not _start_date:
-            _start_date = get_current_time('%Y%m%d', -1)
-        if not _end_date:
-            _end_date = _start_date
-
-        params = {
-            'bgn_de': _start_date,
-            'end_de': _end_date,
-            'page_count': 100
-        }
-
-        response = self.api_manager.get_json('list', params)
-        if response['status'] not in ['000', '013']:
-            tg_msg = f"[ERROR] status code - {response['status']}"
-            self.logger.info(tg_msg)
-            threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
-            return
-
-        if response['status'] == '013':
-            self.logger.info(NO_DATA_MSG)
-            threading.Thread(target=self.tg_manager.send_warning_message, args=(NO_DATA_MSG,)).start()
-            return
-
-        data, total_page = response['list'], response['total_page']
-        for i in range(2, total_page + 1):
-            self.logger.info(f"{_start_date} ~ {_end_date}: current page {i} / {total_page}")
-            time.sleep(0.5)  # to prevent IP ban
-
-            params['page_no'] = i
-            response = self.api_manager.get_json('list', params)
-            if response['status'] != '000':
-                continue
-
-            data += response['list']
-
-        executive_data = self.__get_executive_data(data)
-        parsed = self.dart.parsing(executive_data)
-
-        for rcept, detail in parsed.items():
-            stock_detail = []
-            for d in detail:
-                d['created_at'] = get_current_time()
-                stock_detail.append(tuple(d.values()))
-            self.logger.info(f"DB insert on {rcept}")
-            self.db_manager.insert_executive(stock_detail)
-
-        threading.Thread(target=self.tg_manager.send_warning_message, args=(FINISH_MSG,)).start()
 
     def send_daily_notice(self):
         targets = self.db_manager.get_targets()
@@ -137,16 +88,5 @@ if __name__ == "__main__":
         s.run()
     elif command == 'send':
         s.send_daily_notice()
-    elif command == 'data':
-        start_date = sys.argv[2] if len(sys.argv) >= 3 else None
-        end_date = sys.argv[3] if len(sys.argv) >= 4 else None
-        if (start_date and len(start_date) != 8) or (end_date and len(end_date) != 8):
-            print('[WARNING] date SHOULD BE LENGTH OF 8')
-            exit(0)
-        if end_date and int(start_date) >= int(end_date):
-            print('[WARNING] end_date SHOULD BE LATER THAN start_date')
-            exit(0)
-
-        s.load_data(start_date, end_date)
     else:
-        print('[WARNING] invalid command !! Only [run|send|data]')
+        print('[WARNING] invalid command !! Only [run|send]')
