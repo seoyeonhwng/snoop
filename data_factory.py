@@ -82,7 +82,7 @@ class DataFactory:
         return _corporates
 
     def run(self):
-        target_date = get_current_time('%Y%m%d', -2)
+        target_date = get_current_time('%Y%m%d', -1)
 
         tg_msg = f"[Data Factory]\n"
         tickers = stock.get_market_ticker_list(target_date)
@@ -114,7 +114,7 @@ class DataFactory:
         self.dart.insert_executive(target_date)
         self.logger.info(f"[step4] bulk insert executive")
 
-        tg_msg += f"{target_date} Data Factory Loaded!"
+        tg_msg += f"{target_date} Successfully Loaded:)"
         threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
 
 
@@ -122,6 +122,6 @@ if __name__ == "__main__":
     d = DataFactory()
     d.run()
 
-    # TODO. executive ==> data_factory
+    # TODO. executive ==> data_factory(O)
     # TODO. db_manager 코드 정리
     # TODO. 9시 msg
