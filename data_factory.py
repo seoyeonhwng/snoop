@@ -111,6 +111,8 @@ class DataFactory:
         self.logger.info(f"[step3] bulk insert corporate")
 
         # step4. get executive data
+        self.dart.insert_executive(target_date)
+        self.logger.info(f"[step4] bulk insert executive")
 
         tg_msg += f"{target_date} Data Factory Loaded!"
         threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()

@@ -3,6 +3,7 @@ import logging
 import time
 import re
 import json
+import threading
 from urllib.request import urlopen
 from datetime import datetime
 from copy import deepcopy
@@ -14,10 +15,15 @@ import xml.etree.ElementTree as Et
 from bs4 import BeautifulSoup
 
 from manager.db_manager import DbManager
-from manager.utils import read_config
+from manager.tg_manager import TgManager
+from manager.api_manager import ApiManager
+from manager.utils import read_config, get_current_time
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+NO_DATA_MSG = "조회된 데이터가 없습니다."
+FINISH_MSG = "데이터 로드 성공하였습니다."
 
 API_URL = 'https://opendart.fss.or.kr/api'
 MAIN_URL = "https://dart.fss.or.kr"
@@ -97,6 +103,8 @@ class Dart:
         self.session = requests.session()
         self.crtfc_key = read_config().get('crtfc_key')
         self.db_manager = DbManager()
+        self.tg_manager = TgManager()
+        self.api_manager = ApiManager()
 
     def get_json(self, api, p):
         p['crtfc_key'] = self.crtfc_key
@@ -218,3 +226,59 @@ class Dart:
                         base['corp_name'] = cn
                         corporates.append(base)
                 return corporates
+
+    def __get_executive_data(self, data):
+        """
+        임원 관련 보고서와 유가, 코스닥 데이터만 가지고 온다.
+        """
+        f = lambda x: x.get('report_nm') == '임원ㆍ주요주주특정증권등소유상황보고서' and x.get('corp_cls') in ['Y', 'K']
+        return [d for d in data if f(d)]
+
+    def insert_executive(self, _start_date=None, _end_date=None):
+        if not _start_date:
+            _start_date = get_current_time('%Y%m%d', -1)
+        if not _end_date:
+            _end_date = _start_date
+
+        params = {
+            'bgn_de': _start_date,
+            'end_de': _end_date,
+            'page_count': 100
+        }
+
+        response = self.api_manager.get_json('list', params)
+        if response['status'] not in ['000', '013']:
+            tg_msg = f"[ERROR] status code - {response['status']}"
+            self.logger.info(tg_msg)
+            threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
+            return
+
+        if response['status'] == '013':
+            self.logger.info(NO_DATA_MSG)
+            threading.Thread(target=self.tg_manager.send_warning_message, args=(NO_DATA_MSG,)).start()
+            return
+
+        data, total_page = response['list'], response['total_page']
+        for i in range(2, total_page + 1):
+            self.logger.info(f"{_start_date} ~ {_end_date}: current page {i} / {total_page}")
+            time.sleep(0.5)  # to prevent IP ban
+
+            params['page_no'] = i
+            response = self.api_manager.get_json('list', params)
+            if response['status'] != '000':
+                continue
+
+            data += response['list']
+
+        executive_data = self.__get_executive_data(data)
+        parsed = self.parsing(executive_data)
+
+        for rcept, detail in parsed.items():
+            stock_detail = []
+            for d in detail:
+                d['created_at'] = get_current_time()
+                stock_detail.append(tuple(d.values()))
+            self.logger.info(f"DB insert on {rcept}")
+            self.db_manager.insert_executive(stock_detail)
+
+        threading.Thread(target=self.tg_manager.send_warning_message, args=(FINISH_MSG,)).start()
