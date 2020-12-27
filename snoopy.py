@@ -43,9 +43,9 @@ class Snoopy:
             return '中'
         return '小'
 
-    def __generate_message(self, data):
+    def __generate_message(self, data, target_date):
         message = '## Hi! Im Snoopy :)\n\n'
-        message += f'* {get_current_time("%Y.%m.%d", -1)} / 코스피, 코스닥 대상\n'
+        message += f'* {target_date} / 코스피, 코스닥 대상\n'
         message += '* 공시횟수 내림차순\n\n\n'
 
         if not data:
@@ -66,12 +66,13 @@ class Snoopy:
 
         return message
 
-    def send_daily_notice(self):
+    def send_daily_notice(self, target_date):
+        target_date = get_current_time('%Y-%m-%d', -1) if not target_date else target_date
         targets = self.db_manager.get_targets()
         targets = set([t.get('chat_id') for t in targets])
 
-        data = self.db_manager.get_disclosure_data(get_current_time('%Y-%m-%d', -3))
-        message = self.__generate_message(data)
+        data = self.db_manager.get_disclosure_data(target_date)
+        message = self.__generate_message(data, target_date)
 
         self.tg_manager.send_message(targets, message)
 
@@ -87,6 +88,7 @@ if __name__ == "__main__":
     if command == 'run':
         s.run()
     elif command == 'send':
-        s.send_daily_notice()
+        date = sys.argv[2] if len(sys.argv) >= 3 else None
+        s.send_daily_notice(date)
     else:
         print('[WARNING] invalid command !! Only [run|send]')
