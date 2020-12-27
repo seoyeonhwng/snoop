@@ -33,32 +33,37 @@ class Snoopy:
         f = lambda x: x.get('report_nm') == '임원ㆍ주요주주특정증권등소유상황보고서' and x.get('corp_cls') in ['Y', 'K']
         return [d for d in data if f(d)]
 
-    def __parse_disclosure_data(self):
-        data = self.db_manager.get_disclosure_data(get_current_time('%Y-%m-%d', -1))
-        disclosure_data = {d.get('rcept_no'):d for d in data}
+    def __get_markget_cap(self, rank):
+        if not rank:
+            return '小ㄴㄴ'
 
-        company_infos = self.db_manager.get_company_infos()
-        company_infos = {c.get('stock_code'):c for c in company_infos}
-
-        parsed_data = collections.defaultdict(int)
-        for data in disclosure_data.values():
-            company_name = company_infos.get(data.get('stock_code')).get('name')
-            parsed_data[company_name] += 1
-
-        return parsed_data
+        if rank <= 100:
+            return '大'
+        if rank <= 300:
+            return '中'
+        return '小'
 
     def __generate_message(self, data):
         message = '## Hi! Im Snoopy :)\n\n'
-        message += f'* {get_current_time("%Y.%m.%d", -1)} 기준\n* KOSPI, KOSDAQ 대상\n'
-        message += '* 발생횟수 내림차순\n\n'
+        message += f'* {get_current_time("%Y.%m.%d", -3)} 기준\n* 코스피, 코스닥 대상\n'
+        message += '* 발생횟수 내림차순\n\n\n'
 
         if not data:
             message += f'{NO_DATA_MSG}\n'
             return message
 
-        data = sorted(data.items(), key=lambda x:x[1], reverse=True)
-        for company_name, count in data:
-            message += f'. {company_name} ({count}건)\n'
+        industry_corporates = collections.defaultdict(list)
+        for d in sorted(data, key=lambda data:data['count'], reverse=True):
+            industry_corporates[d['industry_name']].append(d)
+
+        for industry_name, corps in industry_corporates.items():
+            message += f'<{industry_name}>\n'
+            for c in corps:
+                market = '코스피' if c['market'] == 'KOSPI' else '코스닥'
+                cap_info = f'{market}{self.__get_markget_cap(c["market_rank"])}'
+                message += f'. {c["corp_name"]} ({c["count"]}건, {cap_info})\n'
+            message += '\n'
+
         return message
 
     def load_data(self, _start_date=None, _end_date=None):
@@ -114,8 +119,8 @@ class Snoopy:
         targets = self.db_manager.get_targets()
         targets = set([t.get('chat_id') for t in targets])
 
-        parsed_data = self.__parse_disclosure_data()
-        message = self.__generate_message(parsed_data)
+        data = self.db_manager.get_disclosure_data(get_current_time('%Y-%m-%d', -3))
+        message = self.__generate_message(data)
 
         self.tg_manager.send_message(targets, message)
 
