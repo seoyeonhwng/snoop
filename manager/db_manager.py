@@ -94,3 +94,15 @@ class DbManager:
         sql = "SELECT chat_id FROM user WHERE role = '01'"
         self.cursor.execute(sql)
         return self.cursor.fetchall()
+
+    def get_corporate_info(self, corp_name):
+        sql = "SELECT c.corp_name, c.market, c.market_rank, c.market_capitalization " \
+              "FROM dtnn.corporate AS c WHERE c.corp_name = %s"
+        self.cursor.execute(sql, (corp_name))
+        return self.cursor.fetchone()
+
+    def get_executive_detail(self, corp_name, target_date):
+        sql = "SELECT e.* FROM dtnn.executive AS e LEFT JOIN dtnn.corporate AS c ON e.stock_code = c.stock_code " \
+              "WHERE c.corp_name = %s AND e.disclosed_on = %s"
+        self.cursor.execute(sql, (corp_name, target_date))
+        return self.cursor.fetchall()

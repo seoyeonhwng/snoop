@@ -1,5 +1,6 @@
 import telegram
 import datetime
+import collections
 
 from manager.db_manager import DbManager
 from manager.utils import read_config, get_current_time
@@ -46,7 +47,42 @@ class TgManager:
             context.bot.send_message(chat_id=chat_id, text=f"{nickname}님 구독 완료되었습니다!") 
         else:
             self.send_warning_message(f"{nickname}님 구독 실패하었습니다!")
+
+    def detail(self, update, context):
+        chat_id = update.effective_chat.id
+        corp_name = context.args[0]
+        target_date = context.args[1] if len(context.args) >= 2 else get_current_time('%Y%m%d', -1)
+        # TODO input으로 들어온 날짜 형태를 %Y%m%d로 통일시켜야함
+
+        corp_info = self.db_manager.get_corporate_info(corp_name)
+        details = self.db_manager.get_executive_detail(corp_name, target_date)
+    
+        message = self.generate_message_header(corp_info, target_date)
+        message += self.generate_message_body(details)
+        context.bot.send_message(chat_id, message)
+
+    def generate_message_header(self, corp_info, target_date):
+        message = f'## {target_date} {corp_info["corp_name"]} 변동 내역\n\n'
+        message += f'** {corp_info["market"]} {corp_info["market_rank"]}위\n'
+        message += f'** 시가총액 {int(corp_info["market_capitalization"]):,}원\n\n\n'
+        return message
+    
+    def generate_message_body(self, data):
+        if not data:
+            return '해당 날짜에 변동 내역이 없습니다.'
+
+        details = collections.defaultdict(list)
+        for d in data:
+            details[d['executive_name']].append(d)
         
+        message = ''
+        for e_name, infos in details.items():
+            message += f'[{e_name}]\n'
+            message += '| 보고사유 | 변동일 | 특정증권등의 종류 | 변동전 | 증감 | 변동후 | 취득, 처분 단가 |'
+            for info in infos:
+                break
+
+
     def send_message(self, targets, message):
         message += '\n\n' + str(get_current_time()).replace('-', '\-').replace('.', '\.')
         for target in targets:
@@ -66,9 +102,11 @@ class TgManager:
 
         start_handler = CommandHandler('start', self.start)
         subscribe_handler = CommandHandler('subscribe', self.subscribe, pass_args=True)
+        detail_handler = CommandHandler('detail', self.detail, pass_args=True)
 
         dispatcher.add_handler(start_handler)
         dispatcher.add_handler(subscribe_handler)
+        dispatcher.add_handler(detail_handler)
 
         updater.start_polling()
 
