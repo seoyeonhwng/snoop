@@ -1,13 +1,15 @@
 import telegram
 import datetime
 import collections
+import urllib
+import requests
 
 from manager.db_manager import DbManager
-from manager.utils import read_config, get_current_time
+from manager.utils import read_config, get_current_time, REASON_CODE, STOCK_TYPE_CODE
 from telegram.ext import Updater, Dispatcher, CommandHandler, ConversationHandler, MessageHandler, Filters
 
-NICKNAME = 0
-
+REVERSE_REASON_CODE = {v:k for k, v in REASON_CODE.items()}
+REVERSE_STOCK_TYPE_CODE = {v:k for k, v in STOCK_TYPE_CODE.items()}
 
 class TgManager:
     def __init__(self):
@@ -28,6 +30,17 @@ class TgManager:
             'canceled_at': None
         }
         return user_data
+
+    def get_short_url(self, rcept_no):
+        api_url = "http://tinyurl.com/api-create.php?"
+        long_url = f'http://dart.fss.or.kr/dsaf001/main.do?rcpNo={rcept_no}'
+
+        resp = requests.get(api_url + urllib.parse.urlencode({'url': long_url}))
+        if resp.status_code != 200:
+            print('[ERROR] in get_short_url')
+            return
+            
+        return resp.text
 
     def start(self, update, context):
         greeting_msg = "Hi! I'm snoopy.\nIf you want to subscribe me,\nplease enter the command below :)\n\n"
@@ -78,10 +91,14 @@ class TgManager:
         message = ''
         for e_name, infos in details.items():
             message += f'[{e_name}]\n'
-            message += '| 보고사유 | 변동일 | 특정증권등의 종류 | 변동전 | 증감 | 변동후 | 취득, 처분 단가 |'
             for info in infos:
-                break
-
+                traded_on = info['traded_on'].strftime('%Y%m%d')
+                reason_code = REVERSE_REASON_CODE.get(info['reason_code'])
+                stock_type = REVERSE_STOCK_TYPE_CODE.get(info['stock_type'])
+                delta = f'▲{info["delta_volume"]}' if info["delta_volume"] > 0 else f'▼{-info["delta_volume"]}'
+                message += f'. {traded_on} / {reason_code} / {stock_type} ({delta})\n'
+            message += f'{self.get_short_url(infos[0]["rcept_no"])}\n\n'
+        return message
 
     def send_message(self, targets, message):
         message += '\n\n' + str(get_current_time()).replace('-', '\-').replace('.', '\.')
