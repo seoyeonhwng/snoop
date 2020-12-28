@@ -39,7 +39,7 @@ class TgManager:
         if resp.status_code != 200:
             print('[ERROR] in get_short_url')
             return
-            
+
         return resp.text
 
     def start(self, update, context):
@@ -90,14 +90,14 @@ class TgManager:
         
         message = ''
         for e_name, infos in details.items():
-            message += f'[{e_name}]\n'
+            message += f'[{e_name}] {self.get_short_url(infos[0]["rcept_no"])}\n'
             for info in infos:
-                traded_on = info['traded_on'].strftime('%Y%m%d')
+                traded_on = info['traded_on'].strftime('%m/%d')
                 reason_code = REVERSE_REASON_CODE.get(info['reason_code'])
                 stock_type = REVERSE_STOCK_TYPE_CODE.get(info['stock_type'])
-                delta = f'▲{info["delta_volume"]}' if info["delta_volume"] > 0 else f'▼{-info["delta_volume"]}'
-                message += f'. {traded_on} / {reason_code} / {stock_type} ({delta})\n'
-            message += f'{self.get_short_url(infos[0]["rcept_no"])}\n\n'
+                delta = f'▲{info["delta_volume"]:,}' if info["delta_volume"] > 0 else f'▼{-info["delta_volume"]:,}'
+                message += f'. {traded_on} | {reason_code} | {stock_type} ({delta}주 / {int(info["unit_price"]):,}원)\n'
+            message += '\n\n'
         return message
 
     def send_message(self, targets, message):
