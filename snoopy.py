@@ -14,8 +14,8 @@ from manager.utils import get_current_time
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-NO_DATA_MSG = "조회된 데이터가 없습니다."
-FINISH_MSG = "데이터 로드 성공하였습니다."
+NO_DATA_MSG = "조회된 데이터가 없습니다\."
+FINISH_MSG = "데이터 로드 성공하였습니다\."
 
 
 class Snoopy:
@@ -34,7 +34,7 @@ class Snoopy:
 
     def __generate_message(self, data, target_date):
         message = '*\#\# 임원/주요주주 주식변동 기업*\n\n'
-        message += f'\*\* {target_date} / KOSPI, KOSDAQ 대상\n'
+        message += '\*\* ' + target_date.replace("-", "\-") + '/ KOSPI, KOSDAQ 대상\n'
         message += f'\*\* 공시횟수, 시가총액 내림차순\n\n\n'
 
         if not data:
