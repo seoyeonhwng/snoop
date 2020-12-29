@@ -23,7 +23,6 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', lev
 logger = logging.getLogger(__name__)
 
 NO_DATA_MSG = "조회된 데이터가 없습니다."
-FINISH_MSG = "데이터 로드 성공하였습니다."
 
 API_URL = 'https://opendart.fss.or.kr/api'
 MAIN_URL = "https://dart.fss.or.kr"
@@ -219,6 +218,5 @@ class Dart:
                 stock_detail.append(d)
             self.logger.debug(f"DB insert on {rcept}")
             if not self.db_manager.insert_bulk_row('executive', stock_detail):  # 공시번호 단위 bulk insert
+                self.logger.info(f'[ERROR] insert_bulk_row in executive - {rcept}')
                 return
-
-        threading.Thread(target=self.tg_manager.send_warning_message, args=(FINISH_MSG,)).start()

@@ -35,6 +35,7 @@ class Snoopy:
     def __generate_message(self, data, target_date):
         message = '*\#\# 임원/주요주주 주식변동 기업*\n\n'
         message += '\*\* ' + target_date.replace("-", "\-") + '/ KOSPI, KOSDAQ 대상\n'
+        message += '\*\* 순수 장내매수, 장내매도 한정\n'
         message += f'\*\* 공시횟수, 시가총액 내림차순\n\n\n'
 
         if not data:

@@ -3,6 +3,7 @@ import datetime
 import collections
 import urllib
 import requests
+import re
 
 from manager.db_manager import DbManager
 from manager.utils import read_config, get_current_time, REASON_CODE, STOCK_TYPE_CODE
@@ -63,26 +64,34 @@ class TgManager:
 
     def detail(self, update, context):
         chat_id = update.effective_chat.id
+        if len(context.args) > 2:
+            return context.bot.send_message(chat_id, '/detail {회사 이름} {yyyymmdd} 형태로 입력해주세요.')
+        
         corp_name = context.args[0]
-        target_date = context.args[1] if len(context.args) >= 2 else get_current_time('%Y%m%d', -1)
-        # TODO input으로 들어온 날짜 형태를 %Y%m%d로 통일시켜야함
-
+        target_date = context.args[1] if len(context.args) == 2 else get_current_time('%Y%m%d', -1)
+        if not re.fullmatch(r'[0-9]{8}', target_date):
+            return context.bot.send_message(chat_id, '회사 이름을 공백 없이 또는 날짜를 yyyymmdd 형태로 입력해주세요.')
+ 
         corp_info = self.db_manager.get_corporate_info(corp_name)
+        if not corp_info:
+            return context.bot.send_message(chat_id, '해당 회사가 존재하지 않습니다.')
+
         details = self.db_manager.get_executive_detail(corp_name, target_date)
-    
         message = self.generate_message_header(corp_info, target_date)
         message += self.generate_message_body(details)
-        context.bot.send_message(chat_id, message)
+
+        threading.Thread(target=context.bot.send_message, args=(chat_id, message, telegram.ParseMode.MARKDOWN_V2)).start()
 
     def generate_message_header(self, corp_info, target_date):
-        message = f'## {target_date} {corp_info["corp_name"]} 변동 내역\n\n'
-        message += f'** {corp_info["market"]} {corp_info["market_rank"]}위\n'
-        message += f'** 시가총액 {int(corp_info["market_capitalization"]):,}원\n\n\n'
+        target_date = target_date[:4] + '\-' + target_date[4:6] + '\-' + target_date[6:]
+        message = f'\#\# {target_date} {corp_info["corp_name"]} 변동 내역\n\n'
+        message += f'\*\* {corp_info["market"]} {corp_info["market_rank"]}위\n'
+        message += f'\*\* 시가총액 {int(corp_info["market_capitalization"]):,}원\n\n\n'
         return message
     
     def generate_message_body(self, data):
         if not data:
-            return '해당 날짜에 변동 내역이 없습니다.'
+            return r'해당 날짜에 변동 내역이 없습니다\.'
 
         details = collections.defaultdict(list)
         for d in data:
@@ -90,13 +99,15 @@ class TgManager:
         
         message = ''
         for e_name, infos in details.items():
-            message += f'[{e_name}] {self.get_short_url(infos[0]["rcept_no"])}\n'
+            report_url = f'http://dart.fss.or.kr/dsaf001/main.do?rcpNo={infos[0]["rcept_no"]}'
+            message += f'[\[{e_name}\]]({report_url})\n'
+            
             for info in infos:
-                traded_on = info['traded_on'].strftime('%m/%d')
+                traded_on = info['traded_on'].strftime('%m/%d').replace('/', '\/')
                 reason_code = REVERSE_REASON_CODE.get(info['reason_code'])
                 stock_type = REVERSE_STOCK_TYPE_CODE.get(info['stock_type'])
                 delta = f'▲{info["delta_volume"]:,}' if info["delta_volume"] > 0 else f'▼{-info["delta_volume"]:,}'
-                message += f'. {traded_on} | {reason_code} | {stock_type} ({delta}주 / {int(info["unit_price"]):,}원)\n'
+                message += f'\. {traded_on} \| {reason_code} \| {stock_type} \({delta}주 \/ {int(info["unit_price"]):,}원\)\n'
             message += '\n\n'
         return message
 
@@ -119,11 +130,12 @@ class TgManager:
 
         start_handler = CommandHandler('start', self.start)
         subscribe_handler = CommandHandler('subscribe', self.subscribe, pass_args=True)
-        detail_handler = CommandHandler('detail', self.detail, pass_args=True)
+        detail_handler = CommandHandler(['detail', 'd'], self.detail, pass_args=True)
 
         dispatcher.add_handler(start_handler)
         dispatcher.add_handler(subscribe_handler)
         dispatcher.add_handler(detail_handler)
 
         updater.start_polling()
+        updater.idle()
 
