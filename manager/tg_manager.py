@@ -33,17 +33,6 @@ class TgManager:
         }
         return user_data
 
-    def get_short_url(self, rcept_no):
-        api_url = "http://tinyurl.com/api-create.php?"
-        long_url = f'http://dart.fss.or.kr/dsaf001/main.do?rcpNo={rcept_no}'
-
-        resp = requests.get(api_url + urllib.parse.urlencode({'url': long_url}))
-        if resp.status_code != 200:
-            print('[ERROR] in get_short_url')
-            return
-
-        return resp.text
-
     def start(self, update, context):
         greeting_msg = "Hi! I'm snoopy.\nIf you want to subscribe me,\nplease enter the command below :)\n\n"
         greeting_msg += "/subscribe {nickname}\n(ex. /subscribe snoopy)"
