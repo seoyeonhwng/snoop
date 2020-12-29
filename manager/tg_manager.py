@@ -4,6 +4,7 @@ import collections
 import urllib
 import requests
 import re
+import threading
 
 from manager.db_manager import DbManager
 from manager.utils import read_config, get_current_time, REASON_CODE, STOCK_TYPE_CODE
@@ -108,7 +109,7 @@ class TgManager:
                 stock_type = REVERSE_STOCK_TYPE_CODE.get(info['stock_type'])
                 delta = f'▲{info["delta_volume"]:,}' if info["delta_volume"] > 0 else f'▼{-info["delta_volume"]:,}'
                 message += f'\. {traded_on} \| {reason_code} \| {stock_type} \({delta}주 \/ {int(info["unit_price"]):,}원\)\n'
-            message += '\n\n'
+            message += '\n'
         return message
 
     def send_message(self, targets, message):
