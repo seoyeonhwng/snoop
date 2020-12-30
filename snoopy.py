@@ -2,8 +2,9 @@ import sys
 import threading
 import time
 import logging
-
+import time
 import collections
+from datetime import datetime
 
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
@@ -14,8 +15,7 @@ from manager.utils import get_current_time
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-NO_DATA_MSG = "조회된 데이터가 없습니다\."
-FINISH_MSG = "데이터 로드 성공하였습니다\."
+NO_DATA_MSG = "오늘은 아쉽게도 알려줄 내용이 없어😭"
 
 
 class Snoopy:
@@ -33,10 +33,10 @@ class Snoopy:
         return [d for d in data if f(d)]
 
     def __generate_message(self, data, target_date):
-        message = '*\#\# 임원/주요주주 주식변동 기업*\n\n'
-        message += '\*\* ' + target_date.replace("-", "\-") + '/ KOSPI, KOSDAQ 대상\n'
-        message += '\*\* 순수 장내매수, 장내매도 한정\n'
-        message += f'\*\* 공시횟수, 시가총액 내림차순\n\n\n'
+        message = '💌 굿모닝\! 나는 __*스누피*__라고 해 \n      오늘의 스눕 결과를 알려줄게👀\n\n'
+        message += '✔️ ' + target_date.replace("-", "\-") + ' / KOSPI, KOSDAQ 대상\n'
+        message += '✔️ 순수 장내매수, 장내매도 한정\n'
+        message += f'✔️ 공시횟수, 시가총액 내림차순\n\n\n'
 
         if not data:
             message += f'{NO_DATA_MSG}\n'
@@ -47,16 +47,19 @@ class Snoopy:
             industry_corporates[d['industry_name']].append(d)
 
         for industry_name, corps in industry_corporates.items():
-            message += f'\[*{industry_name}*\]\n'
+            message += f'📌 *{industry_name}*\n'
             for c in corps:
                 cap_info = f'_{c["market"]}_ {c["market_rank"]}위'
-                message += f'\. {c["corp_name"]} \({cap_info}\) \- {c["count"]}건\n'
+                corp_name = c["corp_name"].replace('.', '\.')
+                message += f'\. {corp_name} \({cap_info}\) \- {c["count"]}건\n'
             message += '\n'
 
         return message
 
     def send_daily_notice(self, target_date):
-        target_date = get_current_time('%Y-%m-%d', -1) if not target_date else target_date
+        target_date = get_current_time('%Y%m%d', -1) if not target_date else target_date
+        target_date = datetime.strptime(target_date.replace('-', ''), '%Y%m%d').strftime('%Y-%m-%d')
+
         targets = self.db_manager.get_targets()
         targets = set([t.get('chat_id') for t in targets])
 
@@ -66,8 +69,10 @@ class Snoopy:
         self.tg_manager.send_message(targets, message)
 
     def run(self):
-        print('==== RUN ====')
-        self.tg_manager.run()
+        print('[Snoopy Bot is Running!]')
+        while True:
+            self.tg_manager.run()
+            time.sleep(1)
 
 
 if __name__ == "__main__":

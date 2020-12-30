@@ -18,6 +18,7 @@ def get_current_time(date_format=None, day_delta=None):
         return today
     return today.strftime(date_format)
 
+
 REASON_CODE = {
     '장내매수': '01',
     '장내매도': '02',
@@ -95,3 +96,6 @@ STOCK_TYPE_CODE = {
     '교환사채권': '07',
     '기타': '99'
 }
+
+REVERSE_REASON_CODE = {v:k for k, v in REASON_CODE.items()}
+REVERSE_STOCK_TYPE_CODE = {v:k for k, v in STOCK_TYPE_CODE.items()}
