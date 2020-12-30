@@ -71,8 +71,8 @@ class Commander:
     
     def generate_detail_message_body(self, data):
         if not data:
-            return r'해당 날짜에 변동 내역이 없습니다\.'
-
+            return "아쉽게도 알려줄 내용이 없어😭"
+           
         details = collections.defaultdict(list)
         for d in data:
             details[d['executive_name']].append(d)
@@ -87,6 +87,6 @@ class Commander:
                 reason_code = REVERSE_REASON_CODE.get(info['reason_code'])
                 stock_type = REVERSE_STOCK_TYPE_CODE.get(info['stock_type'])
                 delta = f'▲{info["delta_volume"]:,}' if info["delta_volume"] > 0 else f'▼{-info["delta_volume"]:,}'
-                message += f'\. {traded_on} \| {reason_code} \| {stock_type} \({delta}주 \/ {int(info["unit_price"]):,}원\)\n'
+                message += f'• {traded_on} \| {reason_code} \| {stock_type} \({delta}주 \/ {int(info["unit_price"]):,}원\)\n'
             message += '\n'
         return message
