@@ -57,7 +57,7 @@ class Snoopy:
         return message
 
     def send_daily_notice(self, target_date):
-        target_date = get_current_time('%Y%m%d') if not target_date else target_date
+        target_date = get_current_time('%Y%m%d', -1) if not target_date else target_date
         target_date = datetime.strptime(target_date.replace('-', ''), '%Y%m%d').strftime('%Y-%m-%d')
 
         targets = self.db_manager.get_targets()
