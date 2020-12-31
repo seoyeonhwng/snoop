@@ -1,26 +1,20 @@
 import sys
-import threading
-import time
-import logging
 import time
 import collections
 from datetime import datetime
 
+from manager.log_manager import LogManager
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
-from manager.dart import Dart
 from manager.utils import get_current_time
-
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 NO_DATA_MSG = "오늘은 아쉽게도 알려줄 내용이 없어🥺"
 
 
 class Snoopy:
     def __init__(self):
-        self.logger = logger
+        self.logger = LogManager().logger
         self.db_manager = DbManager()
         self.tg_manager = TgManager()
         self.api_manager = ApiManager()
@@ -69,7 +63,8 @@ class Snoopy:
         self.tg_manager.send_message(targets, message)
 
     def run(self):
-        print('[Snoopy Bot is Running!]')
+        self.logger.info('Snoop Bot Started')
+        print('[Snoop Bot is Running!]')
         while True:
             self.tg_manager.run()
             time.sleep(1)
