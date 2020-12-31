@@ -1,23 +1,19 @@
-import logging
 import threading
 
 from pykrx import stock
 from manager.utils import get_current_time
+from manager.log_manager import LogManager
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.dart import Dart
 from manager.naver import Naver
-
-
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 NO_DATA_MSG = "{target_date}에는 거래내역 없습니다."
 
 
 class DataFactory:
     def __init__(self):
-        self.logger = logger
+        self.logger = LogManager().logger
         self.db_manager = DbManager()
         self.tg_manager = TgManager()
         self.dart = Dart()

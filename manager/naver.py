@@ -1,6 +1,7 @@
 import requests
 import re
 
+from manager.log_manager import LogManager
 from manager.db_manager import DbManager
 from manager.utils import get_current_time
 
@@ -9,13 +10,14 @@ BASE_URL = 'https://m.stock.naver.com/sise'
 
 class Naver:
     def __init__(self):
+        self.logger = LogManager().logger
         self.db_manager = DbManager()
 
     def __get_industry_list(self):
         url = 'https://finance.naver.com/sise/sise_group.nhn?type=upjong'
         resp = requests.get(url)
         if resp.status_code != 200:
-            print('[ERROR] status code != 200 in get_industry_list')
+            self.logger.critical('[ERROR] status code != 200 in get_industry_list')
             return
         
         exp = r'<a href="/sise/sise_group_detail.nhn\?type=upjong&no=([0-9]+)">(.+)</a>'
@@ -35,7 +37,7 @@ class Naver:
         url = f'https://finance.naver.com/sise/sise_group_detail.nhn?type=upjong&no={industry_code}'
         resp = requests.get(url)
         if resp.status_code != 200:
-            print('[ERROR] status code != 200 in get_industry_corporates_list')
+            self.logger.critical('[ERROR] status code != 200 in get_industry_corporates_list')
             return
         
         exp = r'<a href="/item/main.nhn\?code=([0-9]+)">(.+)</a>'
@@ -45,6 +47,7 @@ class Naver:
     def update_industry(self):
         self.db_manager.delete_table('industry')
         if not self.db_manager.insert_bulk_row('industry', self.__get_industry_list()):
+            self.logger.critical('[ERROR] in update_industry')
             return
 
     def fill_industry_corporate(self, _corporates):

@@ -43,4 +43,3 @@ class TgManager:
 
         updater.start_polling()
         updater.idle()
-

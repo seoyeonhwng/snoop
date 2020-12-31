@@ -7,16 +7,17 @@ from manager.db_manager import DbManager
 from manager.log_manager import LogManager
 from manager.utils import get_current_time, REVERSE_REASON_CODE, REVERSE_STOCK_TYPE_CODE
 
+
 class Commander:
     def __init__(self):
-        self.db_manager = DbManager()
         self.logger = LogManager().logger
+        self.db_manager = DbManager()
 
     def get_empty_user_data(self, chat_id, nickname):
         user_data = {
             'chat_id': chat_id,
             'nickname': nickname,
-            'role': '02', # user
+            'role': '02',  # user
             'is_paid': True,
             'is_active': True,
             'created_at': get_current_time(),

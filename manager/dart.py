@@ -1,10 +1,7 @@
 import requests
-import logging
 import time
 import re
-import json
 import threading
-from urllib.request import urlopen
 from datetime import datetime
 from copy import deepcopy
 
@@ -14,13 +11,11 @@ import xml.etree.ElementTree as Et
 
 from bs4 import BeautifulSoup
 
+from manager.log_manager import LogManager
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
 from manager.utils import read_config, get_current_time, REASON_CODE, STOCK_TYPE_CODE
-
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 NO_DATA_MSG = "조회된 데이터가 없습니다."
 
@@ -37,23 +32,10 @@ class Dart:
         return cls.instance
 
     def __init__(self):
-        self.logger = logger
-        self.session = requests.session()
-        self.crtfc_key = read_config().get('crtfc_key')
+        self.logger = LogManager().logger
         self.db_manager = DbManager()
         self.tg_manager = TgManager()
         self.api_manager = ApiManager()
-
-    def get_json(self, api, p):
-        p['crtfc_key'] = self.crtfc_key
-        url_parameter = '&'.join([f'{key}={value}' for key, value in p.items()])
-        resp = self.session.get(f'{API_URL}/{api}.json?{url_parameter}')
-        return json.loads(resp.text)
-
-    def get_xml(self, api, p):
-        p['crtfc_key'] = self.crtfc_key
-        url_parameter = '&'.join([f'{key}={value}' for key, value in p.items()])
-        return urlopen(f'{API_URL}/{api}.xml?{url_parameter}')
 
     def convert_valid_format(self, text, text_type):
         if text_type == 'text':
@@ -144,7 +126,7 @@ class Dart:
 
     def build_corporate_list(self, base_corporate):
         corporates = []
-        resp = self.get_xml('corpCode', {})
+        resp = self.api_manager.get_xml('corpCode', {})
         with ZipFile(BytesIO(resp.read())) as zf:
             file_list = zf.namelist()
             while len(file_list) > 0:
