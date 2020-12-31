@@ -7,7 +7,6 @@ import re
 import threading
 
 from manager.commander import Commander
-from manager.db_manager import DbManager
 from manager.utils import read_config, get_current_time, REASON_CODE, STOCK_TYPE_CODE
 from telegram.ext import Updater, Dispatcher, CommandHandler, ConversationHandler, MessageHandler, Filters
 
@@ -17,7 +16,6 @@ class TgManager:
         self.config = read_config()
         self.bot = telegram.Bot(token=self.config.get("tg_bot_token"))
         self.warning_bot = telegram.Bot(token=self.config.get("tg_warning_bot_token"))
-        self.db_manager = DbManager()
         self.commander = Commander()
 
     def send_message(self, targets, message):

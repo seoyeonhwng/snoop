@@ -1,8 +1,6 @@
-import threading
 import pymysql.cursors
 
 from manager.log_manager import LogManager
-from manager.tg_manager import TgManager
 from manager.utils import read_config
 
 
@@ -14,7 +12,6 @@ class DbManager:
 
     def __init__(self):
         self.logger = LogManager().logger
-        self.tg_manager = TgManager()
         self.config = read_config().get("mysql")
         self.conn = self.__connect()
 
@@ -38,7 +35,6 @@ class DbManager:
             msg = f'[Error in execute query]\n{e}'
             msg += f'\n\nQuery : {query}'
             self.logger.critical(msg)
-            threading.Thread(target=self.tg_manager.send_warning_message, args=(msg,)).start()
 
             cur.close()
             return None
@@ -57,7 +53,6 @@ class DbManager:
             msg = f'[Error in execute_values query]\n{e}'
             msg += f'\n\nQuery : {query}'
             self.logger.critical(msg)
-            threading.Thread(target=self.tg_manager.send_warning_message, args=(msg,)).start()
 
             cur.close()
             self.conn.rollback()
@@ -78,7 +73,6 @@ class DbManager:
             msg = f'[Error in execute_commit query]\n{e}'
             msg += f'\n\nQuery : {query}'
             self.logger.critical(msg)
-            threading.Thread(target=self.tg_manager.send_warning_message, args=(msg,)).start()
 
             cur.close()
             self.conn.rollback()
