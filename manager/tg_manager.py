@@ -31,13 +31,15 @@ class TgManager:
         updater = Updater(token=self.config.get("tg_bot_token"), use_context=True)
         dispatcher = updater.dispatcher
 
-        start_handler = CommandHandler('start', self.commander.start)
-        subscribe_handler = CommandHandler('subscribe', self.commander.subscribe, pass_args=True)
-        detail_handler = CommandHandler(['detail', 'd'], self.commander.detail, pass_args=True)
+        start_handler = CommandHandler('start', self.commander.tg_start)
+        subscribe_handler = CommandHandler('subscribe', self.commander.tg_subscribe, pass_args=True)
+        detail_handler = CommandHandler(['detail', 'd'], self.commander.tg_detail, pass_args=True)
+        snoop_handler = CommandHandler(['snoop', 's'], self.commander.tg_snoopy, pass_args=True)
 
         dispatcher.add_handler(start_handler)
         dispatcher.add_handler(subscribe_handler)
         dispatcher.add_handler(detail_handler)
+        dispatcher.add_handler(snoop_handler)
 
         updater.start_polling()
         updater.idle()
