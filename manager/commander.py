@@ -33,11 +33,11 @@ class Commander:
 
     def subscribe(self, update, context):
         chat_id, nickname = update.effective_chat.id, ''.join(context.args)
-        self.logger.info(chat_id, nickname)
+        self.logger.info(f'{chat_id} - {nickname}')
         user_info = self.db_manager.get_user_info(chat_id)
 
         if user_info:
-            msg = f'{user_info["nickname"]}!\n우리 이미 친구잖아😊'
+            msg = f'{user_info[0]["nickname"]}!\n우리 이미 친구잖아😊'
             return context.bot.send_message(chat_id=chat_id, text=msg)
       
         if not self.db_manager.is_valid_nickname(nickname):
