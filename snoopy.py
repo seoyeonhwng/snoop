@@ -67,7 +67,6 @@ class Snoopy:
         print('[Snoop Bot is Running!]')
         while True:
             self.tg_manager.run()
-            time.sleep(1)
 
 
 if __name__ == "__main__":
