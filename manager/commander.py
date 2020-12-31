@@ -4,11 +4,13 @@ import re
 import threading
 
 from manager.db_manager import DbManager
+from manager.log_manager import LogManager
 from manager.utils import get_current_time, REVERSE_REASON_CODE, REVERSE_STOCK_TYPE_CODE
 
 class Commander:
     def __init__(self):
         self.db_manager = DbManager()
+        self.logger = LogManager().logger
 
     def get_empty_user_data(self, chat_id, nickname):
         user_data = {
@@ -24,23 +26,28 @@ class Commander:
         return user_data
 
     def start(self, update, context):
-        greeting_msg = "Hi! I'm snoopy.\nIf you want to subscribe me,\nplease enter the command below :)\n\n"
-        greeting_msg += "/subscribe {nickname}\n(ex. /subscribe snoopy)"
+        greeting_msg = "안녕? 나는 스눕이라고해.\n아래 형태로 너의 별명을 알려줘!\n\n"
+        greeting_msg += "💡 /subscribe {별명}\n      (ex. /subscribe 스눕이)"
 
         context.bot.send_message(chat_id=update.effective_chat.id, text=greeting_msg)
 
     def subscribe(self, update, context):
         chat_id, nickname = update.effective_chat.id, ''.join(context.args)
-        if not self.db_manager.is_valid_chatid(chat_id):
-            return context.bot.send_message(chat_id=chat_id, text='이미 구독 중 입니다.')
+        self.logger.info(chat_id, nickname)
+        user_info = self.db_manager.get_user_info(chat_id)
+
+        if user_info:
+            msg = f'{user_info["nickname"]}!\n우리 이미 친구잖아😊'
+            return context.bot.send_message(chat_id=chat_id, text=msg)
+      
         if not self.db_manager.is_valid_nickname(nickname):
-            return context.bot.send_message(chat_id=chat_id, text=f'{nickname}은 이미 사용 중입니다.')
+            msg = '앗! 다른 친구가 이미 사용 중인 별명이야🥺\n다른 별명 없어?\n\n'
+            msg += "💡 /subscribe {별명}\n      (ex. /subscribe 스눕이)"
+            return context.bot.send_message(chat_id=chat_id, text=msg)
 
         user_data = self.get_empty_user_data(chat_id, nickname)
-        if self.db_manager.insert_bulk_row('user', user_data):
-            context.bot.send_message(chat_id=chat_id, text=f"{nickname}님 구독 완료되었습니다!") 
-        else:
-            print('[Error] {chat_id} {nickname} 구독 실패!')
+        self.db_manager.insert_bulk_row('user', user_data)
+        return context.bot.send_message(chat_id=chat_id, text=f"{nickname}! 만나서 반가워😊") 
 
     def detail(self, update, context):
         chat_id = update.effective_chat.id

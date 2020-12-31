@@ -126,9 +126,9 @@ class DbManager:
     def is_valid_nickname(self, nickname):
         query = "SELECT * FROM user WHERE nickname = '{nickname}'"
         query = query.format(nickname=nickname)
-        return self.__execute(query)
+        return False if self.__execute(query) else True
 
-    def is_valid_chatid(self, chat_id):
+    def get_user_info(self, chat_id):
         query = "SELECT * FROM user WHERE chat_id = '{chat_id}'"
         query = query.format(chat_id=chat_id)
         return self.__execute(query)
