@@ -15,7 +15,7 @@ from manager.log_manager import LogManager
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
-from manager.utils import read_config, get_current_time, REASON_CODE, STOCK_TYPE_CODE
+from manager.utils import get_current_time, REASON_CODE, STOCK_TYPE_CODE
 
 NO_DATA_MSG = "조회된 데이터가 없습니다."
 

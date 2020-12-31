@@ -14,9 +14,9 @@ from telegram.ext import Updater, Dispatcher, CommandHandler, ConversationHandle
 
 class TgManager:
     def __init__(self):
-        self.cfg = read_config()
-        self.bot = telegram.Bot(token=self.cfg.get("tg_bot_token"))
-        self.warning_bot = telegram.Bot(token=self.cfg.get("tg_warning_bot_token"))
+        self.config = read_config()
+        self.bot = telegram.Bot(token=self.config.get("tg_bot_token"))
+        self.warning_bot = telegram.Bot(token=self.config.get("tg_warning_bot_token"))
         self.db_manager = DbManager()
         self.commander = Commander()
 
@@ -26,11 +26,11 @@ class TgManager:
 
     def send_warning_message(self, message):
         message += f'\n\n{get_current_time()}'
-        for admin in self.cfg.get("admin_ids"):
+        for admin in self.config.get("admin_ids"):
             self.warning_bot.send_message(admin, message, timeout=30)
   
     def run(self):
-        updater = Updater(token=self.cfg.get("tg_bot_token"), use_context=True)
+        updater = Updater(token=self.config.get("tg_bot_token"), use_context=True)
         dispatcher = updater.dispatcher
 
         start_handler = CommandHandler('start', self.commander.start)
