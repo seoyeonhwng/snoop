@@ -77,7 +77,7 @@ class DbManager:
             return False
         
         cur.close()
-        self.conn.rollback()
+        self.conn.commit()
         return True
 
     def delete_table(self, table):
