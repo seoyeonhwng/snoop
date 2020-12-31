@@ -38,6 +38,10 @@ class Commander:
         return False
 
     def __get_command_example(self, command):
+        if command == 'start':
+            return '💡 \/subscribe \{별명\}\n      \(ex\. \/subscribe 스눕이\)'
+        if command == 'subscribe':
+            return '💡/subscribe {별명}\n      (ex. /subscribe 스눕이)'
         if command == 'd':
             return '💡/d 스눕전자 20201001\n      (날짜가 없으면 어제!)'
         if command == 's':
@@ -60,12 +64,16 @@ class Commander:
         
     def tg_start(self, update, context):
         greeting_msg = '안녕\? 나는 __*스눕*__이라고해\.\n아래 형태로 너의 별명을 알려줘\!\n\n'
-        greeting_msg += '💡 \/subscribe \{별명\}\n      \(ex\. \/subscribe 스눕이\)'
+        greeting_msg += self.__get_command_example('start')
 
         context.bot.send_message(chat_id=update.effective_chat.id, text=greeting_msg, parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
     def tg_subscribe(self, update, context):
         chat_id, nickname = update.effective_chat.id, ''.join(context.args)
+        if not nickname.strip():
+            cmd_example = self.__get_command_example('subscribe')
+            return context.bot.send_message(chat_id, f'{INVALID_CMD_MSG}{cmd_example}')
+
         self.logger.info(f'{chat_id} - {nickname}')
         user_info = self.db_manager.get_user_info(chat_id)
 
@@ -81,6 +89,24 @@ class Commander:
         user_data = self.__get_user_data(chat_id, nickname)
         self.db_manager.insert_bulk_row('user', [user_data])
         return context.bot.send_message(chat_id=chat_id, text=f'{nickname}! 만나서 반가워😊 /help')
+
+    def tg_whoami(self, update, context):
+        chat_id = update.message.chat_id
+        self.logger.info(f'[whoami] {chat_id}')
+        user_info = self.db_manager.get_user_info(chat_id)
+        if not user_info:
+            msg = '친구야 별명부터 얘기해줄래?\n\n'
+            msg += '💡 /subscribe {별명}\n      (ex. /subscribe 스눕이)'
+            return context.bot.send_message(chat_id=chat_id, text=msg)
+
+        if not user_info[0].get('is_paid') or not user_info[0].get('is_active'):
+            return context.bot.send_message(chat_id=chat_id, text=INVALID_USER_MSG)
+
+        expired_at = user_info[0]["expired_at"].strftime('%Y%m%d')
+        expired_at = expired_at[:4] + '/' + expired_at[4:6] + '/' + expired_at[6:]
+        msg = f'안녕 {user_info[0]["nickname"]}!\n'
+        msg += f'우리 {expired_at} 까지 사이좋게 지내보자😇'
+        return context.bot.send_message(chat_id=chat_id, text=msg)
 
     def tg_detail(self, update, context):
         chat_id = update.effective_chat.id

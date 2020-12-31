@@ -13,7 +13,7 @@ class DbManager:
     def __init__(self):
         self.logger = LogManager().logger
         self.config = read_config().get("mysql")
-        self.conn = self.__connect()
+        self.conn = self.__connect()  # TODO. db 실시간 반영이 안 되는 bug
 
     def __connect(self):
         return pymysql.connect(host=self.config.get("host"),
@@ -27,6 +27,7 @@ class DbManager:
         if not self.conn:
             self.conn = self.__connect()
         cur = self.conn.cursor(pymysql.cursors.DictCursor)
+        # cur = self.__connect().cursor(pymysql.cursors.DictCursor)
 
         try:
             cur.execute(query)

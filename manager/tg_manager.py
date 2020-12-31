@@ -33,11 +33,13 @@ class TgManager:
 
         start_handler = CommandHandler('start', self.commander.tg_start)
         subscribe_handler = CommandHandler('subscribe', self.commander.tg_subscribe, pass_args=True)
+        whoami_handler = CommandHandler(['whoami', 'w'], self.commander.tg_whoami, pass_args=True)
         detail_handler = CommandHandler(['detail', 'd'], self.commander.tg_detail, pass_args=True)
         snoop_handler = CommandHandler(['snoop', 's'], self.commander.tg_snoopy, pass_args=True)
 
         dispatcher.add_handler(start_handler)
         dispatcher.add_handler(subscribe_handler)
+        dispatcher.add_handler(whoami_handler)
         dispatcher.add_handler(detail_handler)
         dispatcher.add_handler(snoop_handler)
 
