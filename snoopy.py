@@ -1,13 +1,16 @@
 import sys
+import os
 import time
 import collections
+import threading
+from multiprocessing import Process
 from datetime import datetime
 
 from manager.log_manager import LogManager
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
-from manager.utils import get_current_time
+from manager.utils import get_current_time, read_config
 
 NO_DATA_MSG = "오늘은 아쉽게도 알려줄 내용이 없어🥺"
 
@@ -15,6 +18,7 @@ NO_DATA_MSG = "오늘은 아쉽게도 알려줄 내용이 없어🥺"
 class Snoopy:
     def __init__(self):
         self.logger = LogManager().logger
+        self.mode = read_config().get('mode')
         self.db_manager = DbManager()
         self.tg_manager = TgManager()
         self.api_manager = ApiManager()
@@ -65,8 +69,22 @@ class Snoopy:
     def run(self):
         self.logger.info('Snoop Bot Started')
         print('[Snoop Bot is Running!]')
+        self.tg_manager.run()
+
+    def watchdog(self):
+        if self.mode == "dev":
+            self.logger.info(f'no logging since {self.mode}')
+            return
         while True:
-            self.tg_manager.run()
+            try:
+                self.logger.info('')
+                # TODO. send /help
+                time.sleep(5)
+            except Exception as e:
+                msg = f"[watchdog error] {e}"
+                self.logger.critical(msg)
+                threading.Thread(target=self.tg_manager.send_warning_message, args=(msg,)).start()
+                os._exit(1)
 
 
 if __name__ == "__main__":
@@ -74,7 +92,8 @@ if __name__ == "__main__":
 
     command = sys.argv[1]
     if command == 'run':
-        s.run()
+        Process(target=s.run, args=()).start()
+        Process(target=s.watchdog, args=()).start()
     elif command == 'send':
         date = sys.argv[2] if len(sys.argv) >= 3 else None
         s.send_daily_notice(date)
