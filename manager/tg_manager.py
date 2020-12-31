@@ -25,11 +25,8 @@ class TgManager:
             self.bot.send_message(target, message, timeout=30, parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
     def send_warning_message(self, message):
-        admins = self.db_manager.get_admin()
-        admins = [d.get('chat_id') for d in admins]
-
         message += f'\n\n{get_current_time()}'
-        for admin in admins:
+        for admin in self.cfg.get("admin_ids"):
             self.warning_bot.send_message(admin, message, timeout=30)
   
     def run(self):

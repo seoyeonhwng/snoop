@@ -81,7 +81,7 @@ class DataFactory:
         return _corporates
 
     def run(self):
-        target_date = get_current_time('%Y%m%d', -1)
+        target_date = get_current_time('%Y%m%d')
         self.logger.info(f"{target_date} Data Factory Start!")
 
         tg_msg = f"[Data Factory]\n"

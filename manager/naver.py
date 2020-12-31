@@ -48,7 +48,7 @@ class Naver:
             return
 
     def fill_industry_corporate(self, _corporates):
-        industry_list = self.db_manager.select_industry()
+        industry_list = self.db_manager.get_industry_list()
         industry_map = {}
         for ind in industry_list:
             data = self.__get_industry_corporates_list(ind.get('industry_code'))

@@ -15,7 +15,7 @@ from manager.utils import get_current_time
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-NO_DATA_MSG = "오늘은 아쉽게도 알려줄 내용이 없어😭"
+NO_DATA_MSG = "오늘은 아쉽게도 알려줄 내용이 없어🥺"
 
 
 class Snoopy:
@@ -33,7 +33,7 @@ class Snoopy:
         return [d for d in data if f(d)]
 
     def __generate_message(self, data, target_date):
-        message = '💌 굿모닝\! 나는 __*스누피*__라고 해 \n      오늘의 스눕 결과를 알려줄게👀\n\n'
+        message = '💌 굿모닝\! 나는 __*스눕*__이야 \n      오늘의 스눕 결과를 알려줄게👀\n\n'
         message += '✔️ ' + target_date.replace("-", "\-") + ' / KOSPI, KOSDAQ 대상\n'
         message += '✔️ 순수 장내매수, 장내매도 한정\n'
         message += f'✔️ 공시횟수, 시가총액 내림차순\n\n\n'
@@ -57,7 +57,7 @@ class Snoopy:
         return message
 
     def send_daily_notice(self, target_date):
-        target_date = get_current_time('%Y%m%d', -1) if not target_date else target_date
+        target_date = get_current_time('%Y%m%d') if not target_date else target_date
         target_date = datetime.strptime(target_date.replace('-', ''), '%Y%m%d').strftime('%Y-%m-%d')
 
         targets = self.db_manager.get_targets()
