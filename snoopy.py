@@ -12,7 +12,7 @@ from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
 from manager.utils import get_current_time, read_config
 
-NO_DATA_MSG = "어제는 아쉽게도 알려줄 내용이 없어🥺"
+NO_DATA_MSG = '어제는 아쉽게도 알려줄 내용이 없어🥺'
 
 
 class Snoopy:
@@ -31,9 +31,9 @@ class Snoopy:
         return [d for d in data if f(d)]
 
     def __generate_message(self, data, target_date):
-        message = '💌 굿모닝\! 나는 __*스눕*__이야 \n      어제의 스눕 결과를 알려줄게👀\n\n'
-        message += '✔️ ' + target_date.replace("-", "\/") + ' / KOSPI, KOSDAQ 대상\n'
-        message += '✔️ 순수 장내매수, 장내매도 한정\n'
+        message = f'💌 굿모닝\! 나는 __*스눕*__이야 \n      어제의 스눕 결과를 알려줄게👀\n\n'
+        message += f'✔️ ' + target_date.replace("-", "\/") + ' / KOSPI, KOSDAQ 대상\n'
+        message += f'✔️ 순수 장내매수, 장내매도 한정\n'
         message += f'✔️ 공시횟수, 시가총액 내림차순\n\n\n'
 
         if not data:

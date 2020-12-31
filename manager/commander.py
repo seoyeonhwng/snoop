@@ -10,7 +10,8 @@ from manager.utils import get_current_time, REVERSE_REASON_CODE, REVERSE_STOCK_T
 
 INVALID_USER_MSG = '💵🤲 ...'
 INVALID_CMD_MSG = '앗! 다시 말해줄래?\n\n'
-NO_DATA_MSG = "아쉽게도 알려줄 내용이 없어🥺"
+NO_DATA_MSG = '아쉽게도 알려줄 내용이 없어🥺'
+
 
 class Commander:
     def __init__(self):
@@ -58,8 +59,8 @@ class Commander:
             return r'굿이브닝\!'
         
     def tg_start(self, update, context):
-        greeting_msg = "안녕\? 나는 __*스눕*__이라고해\.\n아래 형태로 너의 별명을 알려줘\!\n\n"
-        greeting_msg += "💡 \/subscribe \{별명\}\n      \(ex\. \/subscribe 스눕이\)"
+        greeting_msg = '안녕\? 나는 __*스눕*__이라고해\.\n아래 형태로 너의 별명을 알려줘\!\n\n'
+        greeting_msg += '💡 \/subscribe \{별명\}\n      \(ex\. \/subscribe 스눕이\)'
 
         context.bot.send_message(chat_id=update.effective_chat.id, text=greeting_msg, parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
@@ -74,12 +75,12 @@ class Commander:
       
         if not self.db_manager.is_valid_nickname(nickname):
             msg = '앗! 다른 친구가 이미 사용 중인 별명이야🥺\n다른 별명 없어?\n\n'
-            msg += "💡 /subscribe {별명}\n      (ex. /subscribe 스눕이)"
+            msg += '💡 /subscribe {별명}\n      (ex. /subscribe 스눕이)'
             return context.bot.send_message(chat_id=chat_id, text=msg)
 
         user_data = self.__get_user_data(chat_id, nickname)
         self.db_manager.insert_bulk_row('user', [user_data])
-        return context.bot.send_message(chat_id=chat_id, text=f"{nickname}! 만나서 반가워😊 /help") 
+        return context.bot.send_message(chat_id=chat_id, text=f'{nickname}! 만나서 반가워😊 /help')
 
     def tg_detail(self, update, context):
         chat_id = update.effective_chat.id
@@ -154,9 +155,9 @@ class Commander:
     def __generate_snoopy_messsage(self, data, target_date):
         target_date = datetime.strptime(target_date.replace('-', ''), '%Y%m%d').strftime('%Y/%m/%d')
         message = f'💌 {self.__get_greeting()} 나는 __*스눕*__이야\n'
-        message += '      ' + target_date.replace("/", "\/") + '의 스눕 결과를 알려줄게👀\n\n'
-        message += '✔️ KOSPI, KOSDAQ 대상\n'
-        message += '✔️ 순수 장내매수, 장내매도 한정\n'
+        message += f'      ' + target_date.replace("/", "\/") + '의 스눕 결과를 알려줄게👀\n\n'
+        message += f'✔️ KOSPI, KOSDAQ 대상\n'
+        message += f'✔️ 순수 장내매수, 장내매도 한정\n'
         message += f'✔️ 공시횟수, 시가총액 내림차순\n\n\n'
 
         if not data:
