@@ -79,7 +79,7 @@ class Snoopy:
             try:
                 self.logger.info('running')
                 # TODO. send /help
-                time.sleep(5)
+                time.sleep(10)
             except Exception as e:
                 msg = f"[watchdog error] {e}"
                 self.logger.critical(msg)
