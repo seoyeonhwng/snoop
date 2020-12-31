@@ -26,10 +26,10 @@ class Commander:
         return user_data
 
     def start(self, update, context):
-        greeting_msg = "안녕? 나는 스눕이라고해.\n아래 형태로 너의 별명을 알려줘!\n\n"
-        greeting_msg += "💡 /subscribe {별명}\n      (ex. /subscribe 스눕이)"
+        greeting_msg = "안녕\? 나는 __*스눕*__이라고해\.\n아래 형태로 너의 별명을 알려줘\!\n\n"
+        greeting_msg += "💡 \/subscribe \{별명\}\n      \(ex\. \/subscribe 스눕이\)"
 
-        context.bot.send_message(chat_id=update.effective_chat.id, text=greeting_msg)
+        context.bot.send_message(chat_id=update.effective_chat.id, text=greeting_msg, parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
     def subscribe(self, update, context):
         chat_id, nickname = update.effective_chat.id, ''.join(context.args)
@@ -46,8 +46,8 @@ class Commander:
             return context.bot.send_message(chat_id=chat_id, text=msg)
 
         user_data = self.get_empty_user_data(chat_id, nickname)
-        self.db_manager.insert_bulk_row('user', user_data)
-        return context.bot.send_message(chat_id=chat_id, text=f"{nickname}! 만나서 반가워😊") 
+        self.db_manager.insert_bulk_row('user', [user_data])
+        return context.bot.send_message(chat_id=chat_id, text=f"{nickname}! 만나서 반가워😊 /help") 
 
     def detail(self, update, context):
         chat_id = update.effective_chat.id
