@@ -77,7 +77,7 @@ class Snoopy:
             return
         while True:
             try:
-                self.logger.info('')
+                self.logger.info('running')
                 # TODO. send /help
                 time.sleep(5)
             except Exception as e:
