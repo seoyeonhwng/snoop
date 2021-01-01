@@ -12,7 +12,7 @@ INVALID_USER_MSG = '💵🤲 ...'
 INVALID_CMD_MSG = '앗! 다시 말해줄래?\n\n'
 NO_DATA_MSG = '아쉽게도 알려줄 내용이 없어🥺'
 
-JUSTIN = "72309198"
+# JUSTIN = "72309198"
 
 
 class Commander:
@@ -64,8 +64,8 @@ class Commander:
         if 18 <= current_hour < 24:
             return r'굿이브닝\!'
 
-    def tg_watchdog(self):
-        return f'안녕 {self.db_manager.get_user_info(JUSTIN)[0]["nickname"]}!\n'
+    # def tg_watchdog(self):
+    #     return f'안녕 {self.db_manager.get_user_info(JUSTIN)[0]["nickname"]}!\n'
 
     def tg_start(self, update, context):
         greeting_msg = '안녕\? 나는 __*스눕*__이라고해\.\n아래 형태로 너의 별명을 알려줘\!\n\n'

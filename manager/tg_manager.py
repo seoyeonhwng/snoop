@@ -23,9 +23,9 @@ class TgManager:
         for target in targets:
             self.bot.send_message(target, message, timeout=30, parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
-    def send_watchdog_message(self):
-        for admin in self.config.get("admin_ids"):
-            self.watchdog_bot.send_message(admin, self.commander.tg_watchdog(), timeout=30)
+    # def send_watchdog_message(self):
+    #     for admin in self.config.get("admin_ids"):
+    #         self.watchdog_bot.send_message(admin, self.commander.tg_watchdog(), timeout=30)
 
     def send_warning_message(self, message):
         message += f'\n\n{get_current_time()}'
