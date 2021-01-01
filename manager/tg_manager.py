@@ -15,12 +15,17 @@ class TgManager:
     def __init__(self):
         self.config = read_config()
         self.bot = telegram.Bot(token=self.config.get("tg_bot_token"))
+        self.watchdog_bot = telegram.Bot(token=self.config.get("tg_watchdog_bot_token"))
         self.warning_bot = telegram.Bot(token=self.config.get("tg_warning_bot_token"))
         self.commander = Commander()
 
     def send_message(self, targets, message):
         for target in targets:
             self.bot.send_message(target, message, timeout=30, parse_mode=telegram.ParseMode.MARKDOWN_V2)
+
+    def send_watchdog_message(self):
+        for admin in self.config.get("admin_ids"):
+            self.watchdog_bot.send_message(admin, self.commander.tg_watchdog(), timeout=30)
 
     def send_warning_message(self, message):
         message += f'\n\n{get_current_time()}'

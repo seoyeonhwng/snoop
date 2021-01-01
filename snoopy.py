@@ -78,7 +78,7 @@ class Snoopy:
         while True:
             try:
                 self.logger.info('running')
-                # TODO. send /help
+                self.tg_manager.send_watchdog_message()
                 time.sleep(10)
             except Exception as e:
                 msg = f"[watchdog error] {e}"
