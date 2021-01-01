@@ -3,7 +3,7 @@ import os
 import time
 import collections
 import threading
-from multiprocessing import Process
+import multiprocessing as mp
 from datetime import datetime
 
 from manager.log_manager import LogManager
@@ -92,8 +92,9 @@ if __name__ == "__main__":
 
     command = sys.argv[1]
     if command == 'run':
-        Process(target=s.run, args=()).start()
-        Process(target=s.watchdog, args=()).start()
+        mp.set_start_method("fork")
+        mp.Process(target=s.run, args=()).start()
+        mp.Process(target=s.watchdog, args=()).start()
     elif command == 'send':
         date = sys.argv[2] if len(sys.argv) >= 3 else None
         s.send_daily_notice(date)
