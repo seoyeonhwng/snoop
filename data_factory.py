@@ -80,38 +80,47 @@ class DataFactory:
         target_date = get_current_time('%Y%m%d')
         self.logger.info(f"{target_date} Data Factory Start!")
 
-        tg_msg = f"[Data Factory]\n"
+        tg_msg = f"💌 DATA FACTORY\n\n"
+
+        # [step1] update_industry from naver
+        self.naver.update_industry()
+        step1_msg = "[step1] update_industry from naver"
+        tg_msg += f"{step1_msg}\n"
+        self.logger.info(f"{step1_msg}")
+
+        # [step2] bulk insert executive
+        self.dart.insert_executive(target_date)
+        step2_msg = "[step2] bulk insert executive"
+        tg_msg += f"{step2_msg}\n"
+        self.logger.info(f"{step2_msg}")
+
         tickers = stock.get_market_ticker_list(target_date)
         if not tickers:
-            tg_msg += NO_DATA_MSG.format(target_date=target_date)
+            tg_msg += f"\n\n{target_date} Partially Loaded:)"
             threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
             return
 
-        # step1. all delete/insert industry code from naver
-        self.naver.update_industry()
-        self.logger.info(f"[step1] update_industry from naver")
-
-        # step2. bulk insert ticker
+        # [step3] bulk insert ticker
         markets = ["KOSPI", "KOSDAQ"]
         for market in markets:
             tickers = self.get_ticker_info(market, target_date)
             if not self.db_manager.insert_bulk_row('ticker', tickers):
                 return
-        self.logger.info(f"[step2] bulk insert ticker")
+        step3_msg = "[step3] bulk insert ticker"
+        tg_msg += f"{step3_msg}\n"
+        self.logger.info(f"{step3_msg}")
 
-        # step3. bulk insert corporate
+        # [step4] bulk insert corporate
         self.db_manager.unvalidate_corporates()
         corporates = self.dart.build_corporate_list(self.get_empty_corporate())  # from dart
         corporates = self.naver.fill_industry_corporate(corporates)  # from naver
         corporates = self.fill_ticker_corporate(corporates, target_date)  # from ticker
         self.db_manager.update_or_insert_corporate([tuple(c.values()) for c in corporates])
-        self.logger.info(f"[step3] bulk insert corporate")
+        step4_msg = "[step4] bulk insert corporate"
+        tg_msg += f"{step4_msg}\n"
+        self.logger.info(f"{step4_msg}")
 
-        # step4. get executive data
-        self.dart.insert_executive(target_date)
-        self.logger.info(f"[step4] bulk insert executive")
-
-        tg_msg += f"{target_date} Successfully Loaded:)"
+        tg_msg += f"\n\n{target_date} Fully Loaded:)"
         threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
 
 
