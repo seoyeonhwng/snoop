@@ -15,7 +15,7 @@ class LogManager:
             os.mkdir(log_directory)
 
         logging.basicConfig(
-            format="{asctime} {levelname:8} {filename:<10} {funcName:<20} {message}",
+            format="{asctime} {levelname:8} {filename:<15} {funcName:<20} {message}",
             style="{",
             level=logging.INFO,
             handlers=[
