@@ -17,7 +17,7 @@ from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
 from manager.utils import get_current_time, REASON_CODE, STOCK_TYPE_CODE
 
-NO_DATA_MSG = "조회된 데이터가 없습니다."
+NO_DATA_MSG = "[DART] 조회된 데이터가 없습니다."
 
 API_URL = 'https://opendart.fss.or.kr/api'
 MAIN_URL = "https://dart.fss.or.kr"
