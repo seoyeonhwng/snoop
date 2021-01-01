@@ -64,11 +64,12 @@ class Snoopy:
         data = self.db_manager.get_disclosure_data(target_date)
         message = self.__generate_message(data, target_date)
 
+        self.logger.info(f'{target_date}/{len(targets)} start')
         self.tg_manager.send_message(targets, message)
+        self.logger.info(f'{target_date}/{len(targets)} end')
 
     def run(self):
         self.logger.info('Snoop Bot Started')
-        print('[Snoop Bot is Running!]')
         self.tg_manager.run()
 
     def watchdog(self):
@@ -77,9 +78,8 @@ class Snoopy:
             return
         while True:
             try:
-                self.logger.info('running')
-                # self.tg_manager.send_watchdog_message()
-                time.sleep(10)
+                self.logger.debug('running')
+                time.sleep(30)
             except Exception as e:
                 msg = f"[watchdog error] {e}"
                 self.logger.critical(msg)
