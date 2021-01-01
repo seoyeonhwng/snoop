@@ -166,11 +166,63 @@ class Commander:
 
         data = self.db_manager.get_tg_company_data(corp_name, count)
 
-        message = f'🏢 __*{corp_info[0]["corp_name"]}*__ TOP{count} 변동 내역\n\n'
+        message = f'🏢 __*{corp_name}*__ TOP{count} 변동 내역\n\n'
         message += self.__generate_detail_message_header(corp_info[0])
         message += self.__generate_detail_message_body(data)
 
         threading.Thread(target=context.bot.send_message, args=(chat_id, message, telegram.ParseMode.MARKDOWN_V2)).start()
+
+    def tg_executive(self, update, context):
+        chat_id = update.effective_chat.id
+        self.logger.info(f'{chat_id}|{context.args}')
+
+        if not self.__is_valid_user(chat_id):
+            return context.bot.send_message(chat_id, INVALID_USER_MSG)
+        
+        cmd_example = self.__get_command_example('e')
+        if len(context.args) < 2 or len(context.args) > 3:
+            return context.bot.send_message(chat_id, f'{INVALID_CMD_MSG}{cmd_example}')
+        
+        corp_name, executive_name = context.args[0], context.args[1]
+        corp_info = self.db_manager.get_corporate_info(corp_name)
+        if not corp_info:
+            return context.bot.send_message(chat_id, f'{INVALID_CMD_MSG}{cmd_example}')
+        
+        count = context.args[2] if len(context.args) == 3 else '5'
+        if not re.fullmatch(r'[0-9]+', count):
+            return context.bot.send_message(chat_id, f'{INVALID_CMD_MSG}{cmd_example}')
+        count = min(int(count), 10)
+
+        data = self.db_manager.get_tg_executive_data(corp_name, executive_name, count)
+
+        message = f'🏢 __*{corp_name}\({executive_name}\)*__ TOP{count} 변동 내역\n\n'
+        message += self.__generate_detail_message_header(corp_info[0])
+        message += self.__generate_executive_message_body(data)
+
+        threading.Thread(target=context.bot.send_message, args=(chat_id, message, telegram.ParseMode.MARKDOWN_V2)).start()
+    
+    def __generate_executive_message_body(self, data):
+        if not data:
+            return NO_DATA_MSG
+        
+        details = collections.defaultdict(list)
+        for d in data:
+            details[d['rcept_no']].append(d)
+        
+        message = ''
+        for rcept_no, infos in details.items():
+            report_url = f'http://dart.fss.or.kr/dsaf001/main.do?rcpNo={rcept_no}'
+            disclosed_on = str(infos[0]["disclosed_on"])[:10].replace('-', '\/')
+            message += f'📌 [{disclosed_on}]({report_url})\n'
+
+            for info in infos:
+                traded_on = info['traded_on'].strftime('%m/%d').replace('/', '\/')
+                reason_code = REVERSE_REASON_CODE.get(info['reason_code'])
+                stock_type = REVERSE_STOCK_TYPE_CODE.get(info['stock_type'])
+                delta = f'▲{info["delta_volume"]:,}' if info["delta_volume"] > 0 else f'▼{-info["delta_volume"]:,}'
+                message += f'• {traded_on} \| {reason_code} \| {stock_type} \({delta}주 \/ {int(info["unit_price"]):,}원\)\n'
+            message += '\n'
+        return message
 
     def __generate_detail_message_header(self, corp_info):
         message = f'✔️ {corp_info["market"]} {corp_info["market_rank"]}위\n'

@@ -155,9 +155,23 @@ class DbManager:
         query = "SELECT * FROM dtnn.executive as e INNER JOIN " \
                 "(SELECT e.rcept_no FROM dtnn.executive AS e " \
 		        "LEFT JOIN dtnn.corporate AS c ON e.stock_code = c.stock_code " \
-	            "WHERE c.corp_name = '{corp_name}' GROUP BY e.rcept_no ORDER BY rcept_no DESC LIMIT {count} " \
+	            "WHERE e.reason_code IN ('01', '02') AND e.stock_type IN ('01', '02') " \
+                "AND c.corp_name = '{corp_name}' GROUP BY e.rcept_no ORDER BY rcept_no DESC LIMIT {count} " \
                 ") AS tmp ON e.rcept_no = tmp.rcept_no"
         query = query.format(corp_name=corp_name, count=count)
         return self.__execute(query)
+
+    def get_tg_executive_data(self, corp_name, executive_name, count):
+        query = "SELECT * FROM dtnn.executive as e INNER JOIN " \
+                "(SELECT e.rcept_no FROM dtnn.executive AS e " \
+		        "LEFT JOIN dtnn.corporate AS c ON e.stock_code = c.stock_code " \
+	            "WHERE e.reason_code IN ('01', '02') AND e.stock_type IN ('01', '02') " \
+                "AND c.corp_name = '{corp_name}' AND e.executive_name = '{executive_name}' " \
+                "GROUP BY e.rcept_no ORDER BY rcept_no DESC LIMIT {count} " \
+                ") AS tmp ON e.rcept_no = tmp.rcept_no"
+        query = query.format(corp_name=corp_name, executive_name=executive_name, count=count)
+        return self.__execute(query)
+        
+        
 
 
