@@ -139,7 +139,7 @@ class Commander:
 
     def tg_whoami(self, update, context):
         chat_id = update.message.chat_id
-        self.logger.info(f'{chat_id} | {context.args}')
+        self.logger.info(f'{chat_id}|{context.args}')
 
         if not self.__is_valid_user(chat_id):
             return context.bot.send_message(chat_id, INVALID_USER_MSG)
