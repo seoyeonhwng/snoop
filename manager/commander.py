@@ -12,8 +12,6 @@ INVALID_USER_MSG = '💵🤲 ...'
 INVALID_CMD_MSG = '앗! 다시 말해줄래?\n\n'
 NO_DATA_MSG = '아쉽게도 알려줄 내용이 없어🥺'
 
-# JUSTIN = "72309198"
-
 
 class Commander:
     def __init__(self):
@@ -63,9 +61,6 @@ class Commander:
             return r'굿애프터눈\!'
         if 18 <= current_hour < 24:
             return r'굿이브닝\!'
-
-    # def tg_watchdog(self):
-    #     return f'안녕 {self.db_manager.get_user_info(JUSTIN)[0]["nickname"]}!\n'
 
     def tg_start(self, update, context):
         chat_id = update.effective_chat.id
@@ -131,24 +126,54 @@ class Commander:
             return context.bot.send_message(chat_id, f'{INVALID_CMD_MSG}{cmd_example}')
         
         corp_name = context.args[0]
-        target_date = context.args[1] if len(context.args) == 2 else get_current_time('%Y%m%d', -1)
-        if not re.fullmatch(r'[0-9]{8}', target_date):
-            return context.bot.send_message(chat_id, f'{INVALID_CMD_MSG}{cmd_example}')
- 
         corp_info = self.db_manager.get_corporate_info(corp_name)
         if not corp_info:
             return context.bot.send_message(chat_id, f'{INVALID_CMD_MSG}{cmd_example}')
 
-        details = self.db_manager.get_executive_detail(corp_name, target_date)
-        message = self.__generate_detail_message_header(corp_info[0], target_date)
-        message += self.__generate_detail_message_body(details)
+        target_date = context.args[1] if len(context.args) == 2 else get_current_time('%Y%m%d', -1)
+        if not re.fullmatch(r'[0-9]{8}', target_date):
+            return context.bot.send_message(chat_id, f'{INVALID_CMD_MSG}{cmd_example}')
+ 
+        data = self.db_manager.get_tg_detail_data(corp_name, target_date)
+        target_date = target_date[:4] + '\/' + target_date[4:6] + '\/' + target_date[6:]
+
+        message = f'📈 {target_date} __*{corp_info[0]["corp_name"]}*__ 변동 내역\n\n'
+        message += self.__generate_detail_message_header(corp_info[0])
+        message += self.__generate_detail_message_body(data)
+
+        threading.Thread(target=context.bot.send_message, args=(chat_id, message, telegram.ParseMode.MARKDOWN_V2)).start()
+     
+    def tg_company(self, update, context):
+        chat_id = update.effective_chat.id
+        self.logger.info(f'{chat_id}|{context.args}')
+
+        if not self.__is_valid_user(chat_id):
+            return context.bot.send_message(chat_id, INVALID_USER_MSG)
+        
+        cmd_example = self.__get_command_example('c')
+        if len(context.args) < 1 or len(context.args) > 2:
+            return context.bot.send_message(chat_id, f'{INVALID_CMD_MSG}{cmd_example}')
+
+        corp_name = context.args[0]
+        corp_info = self.db_manager.get_corporate_info(corp_name)
+        if not corp_info:
+            return context.bot.send_message(chat_id, f'{INVALID_CMD_MSG}{cmd_example}')
+        
+        count = context.args[1] if len(context.args) == 2 else '5'
+        if not re.fullmatch(r'[0-9]+', count):
+            return context.bot.send_message(chat_id, f'{INVALID_CMD_MSG}{cmd_example}')
+        count = min(int(count), 10)
+
+        data = self.db_manager.get_tg_company_data(corp_name, count)
+
+        message = f'🏢 __*{corp_info[0]["corp_name"]}*__ TOP{count} 변동 내역\n\n'
+        message += self.__generate_detail_message_header(corp_info[0])
+        message += self.__generate_detail_message_body(data)
 
         threading.Thread(target=context.bot.send_message, args=(chat_id, message, telegram.ParseMode.MARKDOWN_V2)).start()
 
-    def __generate_detail_message_header(self, corp_info, target_date):
-        target_date = target_date[:4] + '\/' + target_date[4:6] + '\/' + target_date[6:]
-        message = f'📈 {target_date} __*{corp_info["corp_name"]}*__ 변동 내역\n\n'
-        message += f'✔️ {corp_info["market"]} {corp_info["market_rank"]}위\n'
+    def __generate_detail_message_header(self, corp_info):
+        message = f'✔️ {corp_info["market"]} {corp_info["market_rank"]}위\n'
         message += f'✔️ 시가총액 {int(corp_info["market_capitalization"]):,}원\n\n\n'
         return message
     
@@ -217,3 +242,5 @@ class Commander:
                 message += f'• {corp_name} \({cap_info}\) \- {c["count"]}건\n'
             message += '\n'
         return message
+
+    

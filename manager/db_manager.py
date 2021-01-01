@@ -145,8 +145,19 @@ class DbManager:
         query = query.format(corp_name=corp_name)
         return self.__execute(query)
 
-    def get_executive_detail(self, corp_name, target_date):
+    def get_tg_detail_data(self, corp_name, target_date):
         query = "SELECT e.* FROM dtnn.executive AS e LEFT JOIN dtnn.corporate AS c ON e.stock_code = c.stock_code " \
               "WHERE c.corp_name = '{corp_name}' AND e.disclosed_on = '{target_date}'"
         query = query.format(corp_name=corp_name, target_date=target_date)
         return self.__execute(query)
+
+    def get_tg_company_data(self, corp_name, count):
+        query = "SELECT * FROM dtnn.executive as e INNER JOIN " \
+                "(SELECT e.rcept_no FROM dtnn.executive AS e " \
+		        "LEFT JOIN dtnn.corporate AS c ON e.stock_code = c.stock_code " \
+	            "WHERE c.corp_name = '{corp_name}' GROUP BY e.rcept_no ORDER BY rcept_no DESC LIMIT {count} " \
+                ") AS tmp ON e.rcept_no = tmp.rcept_no"
+        query = query.format(corp_name=corp_name, count=count)
+        return self.__execute(query)
+
+

@@ -41,12 +41,14 @@ class TgManager:
         whoami_handler = CommandHandler(['whoami', 'w'], self.commander.tg_whoami, pass_args=True)
         detail_handler = CommandHandler(['detail', 'd'], self.commander.tg_detail, pass_args=True)
         snoop_handler = CommandHandler(['snoop', 's'], self.commander.tg_snoopy, pass_args=True)
+        company_handler = CommandHandler(['company', 'c'], self.commander.tg_company, pass_args=True)
 
         dispatcher.add_handler(start_handler)
         dispatcher.add_handler(subscribe_handler)
         dispatcher.add_handler(whoami_handler)
         dispatcher.add_handler(detail_handler)
         dispatcher.add_handler(snoop_handler)
+        dispatcher.add_handler(company_handler)
 
         updater.start_polling()
         updater.idle()
