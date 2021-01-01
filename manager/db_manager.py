@@ -13,7 +13,7 @@ class DbManager:
     def __init__(self):
         self.logger = LogManager().logger
         self.config = read_config().get("mysql")
-        self.conn = self.__connect()  # TODO. db 실시간 반영이 안 되는 bug
+        self.conn = self.__connect()
 
     def __connect(self):
         return pymysql.connect(host=self.config.get("host"),
@@ -24,11 +24,7 @@ class DbManager:
                                charset=self.config.get("charset"))
 
     def __execute(self, query):
-        if not self.conn:
-            self.conn = self.__connect()
-        cur = self.conn.cursor(pymysql.cursors.DictCursor)
-        # cur = self.__connect().cursor(pymysql.cursors.DictCursor)
-
+        cur = self.__connect().cursor(pymysql.cursors.DictCursor)
         try:
             cur.execute(query)
             result = cur.fetchall()
@@ -38,16 +34,15 @@ class DbManager:
             self.logger.critical(msg)
 
             cur.close()
+            self.conn.close()
             return None
         
         cur.close()
+        self.conn.close()
         return result
 
     def __execute_values(self, query, values):
-        if not self.conn:
-            self.conn = self.__connect()
-        cur = self.conn.cursor(pymysql.cursors.DictCursor)
-
+        cur = self.__connect().cursor(pymysql.cursors.DictCursor)
         try:
             cur.executemany(query, values)
         except Exception as e:
@@ -57,17 +52,16 @@ class DbManager:
 
             cur.close()
             self.conn.rollback()
+            self.conn.close()
             return False
         
         cur.close()
         self.conn.commit()
+        self.conn.close()
         return True
 
     def __execute_commit(self, query):
-        if not self.conn:
-            self.conn = self.__connect()
-        cur = self.conn.cursor(pymysql.cursors.DictCursor)
-
+        cur = self.__connect().cursor(pymysql.cursors.DictCursor)
         try:
             cur.execute(query)
         except Exception as e:
@@ -77,10 +71,12 @@ class DbManager:
 
             cur.close()
             self.conn.rollback()
+            self.conn.close()
             return False
         
         cur.close()
         self.conn.commit()
+        self.conn.close()
         return True
 
     def delete_table(self, table):
