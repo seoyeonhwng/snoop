@@ -68,6 +68,9 @@ class Commander:
     #     return f'안녕 {self.db_manager.get_user_info(JUSTIN)[0]["nickname"]}!\n'
 
     def tg_start(self, update, context):
+        chat_id = update.effective_chat.id
+        self.logger.info(f'{chat_id}')
+
         greeting_msg = '안녕\? 나는 __*스눕*__이라고해\.\n아래 형태로 너의 별명을 알려줘\!\n\n'
         greeting_msg += self.__get_command_example('start')
 
@@ -75,6 +78,8 @@ class Commander:
 
     def tg_subscribe(self, update, context):
         chat_id, nickname = update.effective_chat.id, ''.join(context.args)
+        self.logger.info(f'{chat_id}|{context.args}')
+
         if not nickname.strip():
             cmd_example = self.__get_command_example('subscribe')
             return context.bot.send_message(chat_id, f'{INVALID_CMD_MSG}{cmd_example}')
@@ -97,7 +102,8 @@ class Commander:
 
     def tg_whoami(self, update, context):
         chat_id = update.message.chat_id
-        self.logger.info(f'[whoami] {chat_id}')
+        self.logger.info(f'{chat_id}|{context.args}')
+
         user_info = self.db_manager.get_user_info(chat_id)
         if not user_info:
             msg = '친구야 별명부터 얘기해줄래?\n\n'
@@ -115,6 +121,8 @@ class Commander:
 
     def tg_detail(self, update, context):
         chat_id = update.effective_chat.id
+        self.logger.info(f'{chat_id}|{context.args}')
+
         if not self.__is_valid_user(chat_id):
             return context.bot.send_message(chat_id, INVALID_USER_MSG)
         
@@ -168,6 +176,8 @@ class Commander:
 
     def tg_snoopy(self, update, context):
         chat_id = update.effective_chat.id
+        self.logger.info(f'{chat_id}|{context.args}')
+        
         if not self.__is_valid_user(chat_id):
             return context.bot.send_message(chat_id, INVALID_USER_MSG)
         
