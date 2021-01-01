@@ -97,7 +97,7 @@ class Commander:
 
     def tg_hi(self, update, context):
         chat_id, nickname = update.effective_chat.id, ''.join(context.args)
-        self.logger.info(f'{chat_id} | {context.args}')
+        self.logger.info(f'{chat_id}|{context.args}')
 
         invalid_cmd_msg = f'{self.__get_cmd_description("hi")}{self.__get_cmd_example("hi")}{self.__get_possible_error("hi")}'
         if not nickname.strip():
@@ -118,7 +118,7 @@ class Commander:
 
     def tg_help(self, update, context):
         chat_id = update.message.chat_id
-        self.logger.info(f'{chat_id} | {context.args}')
+        self.logger.info(f'{chat_id}|{context.args}')
 
         msg = f'만나서 반가워\!\n임원들의 주식거래에 기웃거리는 "[__*스눕*__](https://tinyurl.com/y9z7m6sa)"이라고해\.\n\n'
         msg += f'나는 매일 아침 8시에 전날의 스눕 결과를 알려주고,\n그 외의 상세 정보들도 알려줄 수 있어\.\n\n'
