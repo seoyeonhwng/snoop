@@ -38,6 +38,7 @@ class TgManager:
 
         start_handler = CommandHandler('start', self.commander.tg_start)
         hi_handler = CommandHandler('hi', self.commander.tg_hi, pass_args=True)
+        help_handler = CommandHandler(['help', 'h'], self.commander.tg_help, pass_args=True)
         whoami_handler = CommandHandler(['whoami', 'w'], self.commander.tg_whoami, pass_args=True)
         detail_handler = CommandHandler(['detail', 'd'], self.commander.tg_detail, pass_args=True)
         snoop_handler = CommandHandler(['snoop', 's'], self.commander.tg_snoopy, pass_args=True)
@@ -46,11 +47,16 @@ class TgManager:
 
         dispatcher.add_handler(start_handler)
         dispatcher.add_handler(hi_handler)
+        dispatcher.add_handler(help_handler)
         dispatcher.add_handler(whoami_handler)
         dispatcher.add_handler(detail_handler)
         dispatcher.add_handler(snoop_handler)
         dispatcher.add_handler(company_handler)
         dispatcher.add_handler(executive_handler)
+
+        error_handler = MessageHandler(~Filters.regex(r'\/[start|snoop|s|detail|d|company|c|executive|e|whoami|w|hi|help|h]'), 
+                                       self.commander.tg_help)
+        dispatcher.add_handler(error_handler)
 
         updater.start_polling()
         updater.idle()
