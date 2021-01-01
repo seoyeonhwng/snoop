@@ -15,7 +15,8 @@ class LogManager:
             os.mkdir(log_directory)
 
         logging.basicConfig(
-            format='%(asctime)s %(levelname)s %(filename)s %(funcName)s %(message)s',
+            format="{asctime} {levelname:8} {filename:<10} {funcName:<20} {message}",
+            style="{",
             level=logging.INFO,
             handlers=[
                 logging.FileHandler(log_directory + get_current_time('%Y%m%d') + '.log', mode='a'),
