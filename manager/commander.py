@@ -7,7 +7,7 @@ from datetime import datetime
 from manager.db_manager import DbManager
 from manager.log_manager import LogManager
 from utils.config import REVERSE_REASON_CODE, REVERSE_STOCK_TYPE_CODE
-from utils.commons import get_current_time
+from utils.commons import get_current_time, read_message
 
 INVALID_USER_MSG = '💵🤲 ...'
 NO_DATA_MSG = '아쉽게도 알려줄 내용이 없어🥺'
@@ -37,45 +37,6 @@ class Commander:
             return True
         return False
 
-    def __get_possible_error(self, command):
-        msg = '✔️ 혹시 명령어만 입력하지는 않았어?\n✔️ 단어 사이 띄어쓰기는 잘했어?\n'
-        if command == 'hi':
-            return msg + '✔️ 별명 입력 잘했어?\n\n'
-        if command == 'd':
-            return msg + '✔️ 메시지에 있는 회사명으로 입력했어?\n✔️ 날짜 형식은 올바르게 적었어?\n\n'
-        if command == 's':
-            return msg + '✔️ 날짜 형식은 올바르게 적었어?\n\n'
-        if command == 'c':
-            return msg + '✔️ 메시지에 있는 회사명으로 입력했어?\n✔️ 개수는 숫자로 입력했어?\n\n'
-        if command == 'e':
-            return msg + '✔️ 메시지에 있는 회사명으로 입력했어?\n ✔️ 개수는 숫자로 입력했어?\n\n'
-
-    def __get_cmd_description(self, command):
-        if command == 'hi':
-            return '🔔 /hi 는 회원 가입하는 기능이야!\n\n'
-        if command == 's':
-            return '🔔 /s 는 특정 날짜의 스눕 결과를\n      알려주는 기능이야!\n\n'
-        if command == 'd':
-            return '🔔 /d 는 특정 회사의 상세 스눕 결과를\n      알려주는 기능이야!\n\n'
-        if command == 'c':
-            return '🔔 /c 는 특정 회사의 최근 스눕 결과를\n      알려주는 기능이야!\n\n'
-        if command == 'e':
-            return '🔔 /e 는 특정 임원의 최근 스눕 결과를\n      알려주는 기능이야!\n\n'
-
-    def __get_cmd_example(self, command):
-        if command == 'start':
-            return '💡 \/hi \[별명\]\n      \- 예\) \/hi 스눕이'
-        if command == 'hi':
-            return '💡 /hi [별명]\n      - 예) /hi 스눕이\n\n'
-        if command == 'd':
-            return '💡 /d [회사명] [날짜]\n      - 예) /d 스눕전자 20201001\n      - 날짜가 없으면 어제꺼!\n\n'
-        if command == 's':
-            return '💡 /s [날짜]\n      - 예) /s 20201001\n\n'
-        if command == 'c':
-            return '💡 /c [회사명] [개수]\n      - 예) /c 스눕전자 10\n      - 개수 없으면 5개!\n\n'
-        if command == 'e':
-            return '💡 /e [회사명] [임원이름] [개수]\n      - 예) /e 스눕전자 황스눕 10\n      - 개수 없으면 5개!\n\n'
-
     def __get_greeting(self):
         current_hour = int(get_current_time('%H'))
         if 0 <= current_hour < 8:
@@ -91,52 +52,33 @@ class Commander:
         chat_id = update.effective_chat.id
         self.logger.info(f'{chat_id}')
 
-        greeting_msg = '안녕\? 나는 __*스눕*__이라고해\.\n아래 형태로 너의 별명을 알려줘\!\n\n'
-        greeting_msg += self.__get_cmd_example('start')
-
-        context.bot.send_message(chat_id=update.effective_chat.id, text=greeting_msg, parse_mode=telegram.ParseMode.MARKDOWN_V2)
+        context.bot.send_message(chat_id=update.effective_chat.id, text=read_message('start.txt'), parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
     def tg_hi(self, update, context):
         chat_id, nickname = update.effective_chat.id, ''.join(context.args)
         self.logger.info(f'{chat_id}|{context.args}')
 
-        invalid_cmd_msg = f'{self.__get_cmd_description("hi")}{self.__get_cmd_example("hi")}{self.__get_possible_error("hi")}'
         if not nickname.strip():
-            return context.bot.send_message(chat_id, invalid_cmd_msg)
+            return context.bot.send_message(chat_id, read_message('hi_guide.txt'), parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
         user_info = self.db_manager.get_user_info(chat_id)
         if user_info:
-            msg = f'{user_info[0]["nickname"]}!\n우리 이미 친구잖아😊'
-            return context.bot.send_message(chat_id=chat_id, text=msg)
+            text = read_message('hi_valid_user.txt').format(nickname=nickname)
+            return context.bot.send_message(chat_id=chat_id, text=text, parse_mode=telegram.ParseMode.MARKDOWN_V2)
       
         if not self.db_manager.is_valid_nickname(nickname):
-            msg = f'앗! 다른 친구가 이미 사용 중인 별명이야🥺\n다른 별명 없어?\n\n{self.__get_cmd_example("hi")}'
-            return context.bot.send_message(chat_id=chat_id, text=msg)
+            return context.bot.send_message(chat_id=chat_id, text=read_message('hi_unvalid_nickname.txt'), parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
         user_data = self.__get_user_data(chat_id, nickname)
         self.db_manager.insert_bulk_row('user', [user_data])
-        return context.bot.send_message(chat_id=chat_id, text=f'{nickname}! 만나서 반가워😊 /help')
+        return context.bot.send_message(chat_id=chat_id, text=read_message('hi_success.txt'), parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
     def tg_help(self, update, context):
         chat_id = update.message.chat_id
         self.logger.info(f'{chat_id}|{context.args}')
+        guide = read_message('help.txt')
 
-        msg = f'만나서 반가워\!\n임원들의 주식거래에 기웃거리는 "[__*스눕*__](https://tinyurl.com/y9z7m6sa)"이라고해\.\n\n'
-        msg += f'나는 매일 아침 8시에 전날의 스눕 결과를 알려주고,\n그 외의 상세 정보들도 알려줄 수 있어\.\n\n'
-        msg += f'그리고 나는 챗봇이기 때문에,\n너가 지켜줘야 할 몇 가지 약속이 있어\!\n\n'
-        msg += f'*1\. 나에게 말을 걸기 위해서는\n    항상 "/"로 시작을 해줘*\n'
-        msg += f'*2\. 각 기능 별로 입력하는 값들에 대해서는,*\n    *꼭 띄어쓰기를 부탁해*\n\n'
-        msg += f'그럼 이제 대화창에 "/"를 입력하면서\,\n'
-        msg += f'우리 같이 놀아볼까\?\n\n'
-        msg += f'참\! 나는 2018년 데이터부터 알려줄 수 있어\.\n그리고 👉 옆에 적힌 문구는 꼭 한번 클릭해봐\!\n\n\n'
-        msg += f'\/hi \- 회원가입하기\n'
-        msg += f'\/s \- \[s\]noop 조회하기\n'
-        msg += f'\/d \- \[d\]etail\(상세\) 스눕 조회하기\n'
-        msg += f'\/c \- 최근 \[c\]ompany\(회사\) 스눕 조회하기\n'
-        msg += f'\/e \- 최근 \[e\]xecutive\(임원\) 스눕 조회하기\n'
-        msg += f'\/w \- 회원정보 조회하기\n'
-        msg += f'\/help \- 도움말 보기\n'
-        threading.Thread(target=context.bot.send_message, args=(chat_id, msg, telegram.ParseMode.MARKDOWN_V2, True)).start()
+        threading.Thread(target=context.bot.send_message, args=(chat_id, guide, telegram.ParseMode.MARKDOWN_V2, True)).start()
 
     def tg_whoami(self, update, context):
         chat_id = update.message.chat_id
@@ -147,34 +89,32 @@ class Commander:
 
         user_info = self.db_manager.get_user_info(chat_id)
         if not user_info:
-            msg = f'친구야 별명부터 얘기해줄래?\n\n{self.__get_cmd_example("hi")}'
-            return context.bot.send_message(chat_id=chat_id, text=msg)
+            return context.bot.send_message(chat_id=chat_id, text=read_message('w_unvalid_user.txt'), parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
-        expired_at = user_info[0]["expired_at"].strftime('%Y%m%d')
-        expired_at = expired_at[:4] + '/' + expired_at[4:6] + '/' + expired_at[6:]
-        msg = f'안녕 {user_info[0]["nickname"]}!\n'
-        msg += f'우리 {expired_at} 까지 사이좋게 지내보자😇'
-        return context.bot.send_message(chat_id=chat_id, text=msg)
+        expired_on = user_info[0]['expired_at'].strftime('%Y/%m/%d').replace('/', r'\/')
+        nickname = user_info[0]['nickname']
+        message = read_message('w_success.txt').format(nickname=nickname, expired_on=expired_on)
+        return context.bot.send_message(chat_id=chat_id, text=message, parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
     def tg_detail(self, update, context):
-        invalid_cmd_msg = f'{self.__get_cmd_description("d")}{self.__get_cmd_example("d")}{self.__get_possible_error("d")}'
         chat_id = update.effective_chat.id
         self.logger.info(f'{chat_id}|{context.args}')
 
         if not self.__is_valid_user(chat_id):
             return context.bot.send_message(chat_id, INVALID_USER_MSG)
         
+        guide = read_message('d_guide.txt')
         if len(context.args) < 1 or len(context.args) > 2:
-            return context.bot.send_message(chat_id, invalid_cmd_msg)
+            return context.bot.send_message(chat_id, guide, parse_mode=telegram.ParseMode.MARKDOWN_V2)
         
         corp_name = context.args[0]
         corp_info = self.db_manager.get_corporate_info(corp_name)
         if not corp_info:
-            return context.bot.send_message(chat_id, invalid_cmd_msg)
+            return context.bot.send_message(chat_id, guide, parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
         target_date = context.args[1] if len(context.args) == 2 else get_current_time('%Y%m%d', -1)
         if not re.fullmatch(r'[0-9]{8}', target_date):
-            return context.bot.send_message(chat_id, invalid_cmd_msg)
+            return context.bot.send_message(chat_id, guide, parse_mode=telegram.ParseMode.MARKDOWN_V2)
  
         data = self.db_manager.get_tg_detail_data(corp_name, target_date)
         target_date = target_date[:4] + '\/' + target_date[4:6] + '\/' + target_date[6:]
@@ -186,24 +126,24 @@ class Commander:
         threading.Thread(target=context.bot.send_message, args=(chat_id, message, telegram.ParseMode.MARKDOWN_V2)).start()
      
     def tg_company(self, update, context):
-        invalid_cmd_msg = f'{self.__get_cmd_description("c")}{self.__get_cmd_example("c")}{self.__get_possible_error("c")}'
         chat_id = update.effective_chat.id
         self.logger.info(f'{chat_id}|{context.args}')
 
         if not self.__is_valid_user(chat_id):
             return context.bot.send_message(chat_id, INVALID_USER_MSG)
 
+        guide = read_message('c_guide.txt')
         if len(context.args) < 1 or len(context.args) > 2:
-            return context.bot.send_message(chat_id, invalid_cmd_msg)
+            return context.bot.send_message(chat_id, guide, parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
         corp_name = context.args[0]
         corp_info = self.db_manager.get_corporate_info(corp_name)
         if not corp_info:
-            return context.bot.send_message(chat_id, invalid_cmd_msg)
+            return context.bot.send_message(chat_id, guide, parse_mode=telegram.ParseMode.MARKDOWN_V2)
         
         count = context.args[1] if len(context.args) == 2 else '5'
         if not re.fullmatch(r'[0-9]+', count):
-            return context.bot.send_message(chat_id, invalid_cmd_msg)
+            return context.bot.send_message(chat_id, guide, parse_mode=telegram.ParseMode.MARKDOWN_V2)
         count = min(int(count), 10)
 
         data = self.db_manager.get_tg_company_data(corp_name, count)
@@ -215,24 +155,24 @@ class Commander:
         threading.Thread(target=context.bot.send_message, args=(chat_id, message, telegram.ParseMode.MARKDOWN_V2)).start()
 
     def tg_executive(self, update, context):
-        invalid_cmd_msg = f'{self.__get_cmd_description("e")}{self.__get_cmd_example("e")}{self.__get_possible_error("e")}'
         chat_id = update.effective_chat.id
         self.logger.info(f'{chat_id}|{context.args}')
 
         if not self.__is_valid_user(chat_id):
             return context.bot.send_message(chat_id, INVALID_USER_MSG)
         
+        guide = read_message('e_guide.txt')
         if len(context.args) < 2 or len(context.args) > 3:
-            return context.bot.send_message(chat_id, invalid_cmd_msg)
+            return context.bot.send_message(chat_id, guide, parse_mode=telegram.ParseMode.MARKDOWN_V2)
         
         corp_name, executive_name = context.args[0], context.args[1]
         corp_info = self.db_manager.get_corporate_info(corp_name)
         if not corp_info:
-            return context.bot.send_message(chat_id, invalid_cmd_msg)
+            return context.bot.send_message(chat_id, guide, parse_mode=telegram.ParseMode.MARKDOWN_V2)
         
         count = context.args[2] if len(context.args) == 3 else '5'
         if not re.fullmatch(r'[0-9]+', count):
-            return context.bot.send_message(chat_id, invalid_cmd_msg)
+            return context.bot.send_message(chat_id, guide, parse_mode=telegram.ParseMode.MARKDOWN_V2)
         count = min(int(count), 10)
 
         data = self.db_manager.get_tg_executive_data(corp_name, executive_name, count)
@@ -296,19 +236,19 @@ class Commander:
         return message
 
     def tg_snoopy(self, update, context):
-        invalid_cmd_msg = f'{self.__get_cmd_description("s")}{self.__get_cmd_example("s")}{self.__get_possible_error("s")}'
         chat_id = update.effective_chat.id
         self.logger.info(f'{chat_id}|{context.args}')
         
         if not self.__is_valid_user(chat_id):
             return context.bot.send_message(chat_id, INVALID_USER_MSG)
         
+        guide = read_message('s_guide.txt')
         if len(context.args) != 1:
-            return context.bot.send_message(chat_id, invalid_cmd_msg)
+            return context.bot.send_message(chat_id, guide, parse_mode=telegram.ParseMode.MARKDOWN_V2)
         
         target_date = context.args[0]
         if not re.fullmatch(r'[0-9]{8}', target_date):
-            return context.bot.send_message(chat_id, invalid_cmd_msg)
+            return context.bot.send_message(chat_id, guide, parse_mode=telegram.ParseMode.MARKDOWN_V2)
         
         data = self.db_manager.get_disclosure_data(target_date)
         message = self.__generate_snoopy_messsage(data, target_date)

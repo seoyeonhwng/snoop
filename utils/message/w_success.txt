@@ -1,0 +1,2 @@
+안녕 {nickname}\!
+우리 {expired_on} 까지 사이좋게 지내보자😇

@@ -2,7 +2,6 @@ import pymysql.cursors
 
 from manager.log_manager import LogManager
 from utils.config import HOST, USER, PASSWORD, DB, PORT, CHARSET
-from manager.utils import read_config
 
 
 class DbManager:
