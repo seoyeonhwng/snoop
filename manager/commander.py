@@ -1,6 +1,7 @@
 import collections
 import re
 import time
+import threading
 from datetime import datetime
 
 from manager.db_manager import DbManager
@@ -12,7 +13,7 @@ from utils.commons import get_current_time, read_message
 MAX_NICKNAME_BYTE = 30
 # INVALID_USER_MSG = '💵🤲 \.\.\.'
 INVALID_USER_MSG = '아직 우린 친구가 아니야🥺\n회원가입부터 해줄래\?\n\n\/hi 명령어로 할 수 있어\!'
-NO_DATA_MSG = '아쉽게도 알려줄 내용이 없어🥺'
+NO_DATA_MSG = '아쉽게도 이 날은 주식 거래를 한 임원이 없어🥺'
 
 
 class Commander:
@@ -461,6 +462,10 @@ class Commander:
             update=update
         )
 
+        # notice to admins
+        tg_msg = f'[신규 회원 도착]\n{nickname}'
+        threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
+
     def tg_help(self, update, context):
         chat_id = update.message.chat_id
         log_msg = f'{chat_id}|{context.args}'
@@ -541,6 +546,10 @@ class Commander:
             tg_msg,
             update=update
         )
+
+        # notice to admins
+        tg_msg = f'[피드백 도착]\n{content}'
+        threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
 
     def tg_command(self, update, context):
         chat_id = update.message.chat_id
