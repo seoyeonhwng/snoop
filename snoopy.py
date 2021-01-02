@@ -11,10 +11,12 @@ from manager.db_manager import DbManager
 from manager.api_manager import ApiManager
 from manager.tg_manager import TgManager
 from manager.commander import Commander
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from utils.commons import get_current_time
 from utils.config import BOT_TOKEN
 from utils.config import MODE
+from utils.config import TG_WORKERS
+
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 
 NO_DATA_MSG = '어제는 아쉽게도 알려줄 내용이 없어🥺'
@@ -77,7 +79,7 @@ class Snoopy:
     def run(self):
         self.logger.info('Snoop Bot Started')
 
-        updater = Updater(token=BOT_TOKEN, use_context=True, workers=32)
+        updater = Updater(token=BOT_TOKEN, use_context=True, workers=TG_WORKERS)
         dispatcher = updater.dispatcher
 
         start_handler = CommandHandler('start', self.commander.tg_start, run_async=False)

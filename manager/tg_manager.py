@@ -1,12 +1,14 @@
 import telegram
 
 from utils.commons import get_current_time
-from utils.config import BOT_TOKEN, WARNING_BOT_TOKEN, WATCHDOG_BOT_TOKEN, ADMIN_IDS
+from utils.config import BOT_TOKEN, WARNING_BOT_TOKEN, WATCHDOG_BOT_TOKEN, ADMIN_IDS, TG_CONN_POOL
+
+from telegram.utils.request import Request
 
 
 class TgManager:
     def __init__(self):
-        self.bot = telegram.Bot(token=BOT_TOKEN)
+        self.bot = telegram.Bot(token=BOT_TOKEN, request=Request(con_pool_size=TG_CONN_POOL))
         self.watchdog_bot = telegram.Bot(token=WATCHDOG_BOT_TOKEN)
         self.warning_bot = telegram.Bot(token=WARNING_BOT_TOKEN)
 

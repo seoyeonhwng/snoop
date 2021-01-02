@@ -16,6 +16,8 @@ WATCHDOG_BOT_TOKEN = config.get('watchdog_bot_token')
 BOT_TOKEN = config.get('bot_token')
 WARNING_BOT_TOKEN = config.get('warning_bot_token')
 ADMIN_IDS = config.get('admin_ids')
+TG_WORKERS = 32
+TG_CONN_POOL = TG_WORKERS + 4
 
 HOST = config.get('mysql').get('host')
 USER = config.get('mysql').get('user')
