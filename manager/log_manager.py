@@ -17,7 +17,7 @@ class LogManager:
             os.mkdir(log_directory)
 
         logging.basicConfig(level=logging.INFO,
-                            format="{asctime} {levelname:8} {filename:<15} {funcName:<20} {message}",
+                            format="{asctime} {levelname:8} {filename:<15} {message}",
                             style="{",
                             handlers=[
                                 TimedRotatingFileHandler(log_directory + get_current_time('%Y%m%d') + '.log',
