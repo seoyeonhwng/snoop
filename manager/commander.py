@@ -6,7 +6,8 @@ from datetime import datetime
 
 from manager.db_manager import DbManager
 from manager.log_manager import LogManager
-from manager.utils import get_current_time, REVERSE_REASON_CODE, REVERSE_STOCK_TYPE_CODE
+from utils.config import REVERSE_REASON_CODE, REVERSE_STOCK_TYPE_CODE
+from utils.commons import get_current_time
 
 INVALID_USER_MSG = '💵🤲 ...'
 NO_DATA_MSG = '아쉽게도 알려줄 내용이 없어🥺'

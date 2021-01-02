@@ -1,6 +1,7 @@
 import pymysql.cursors
 
 from manager.log_manager import LogManager
+from utils.config import HOST, USER, PASSWORD, DB, PORT, CHARSET
 from manager.utils import read_config
 
 
@@ -12,16 +13,15 @@ class DbManager:
 
     def __init__(self):
         self.logger = LogManager().logger
-        self.config = read_config().get("mysql")
         self.conn = None
 
     def __connect(self):
-        return pymysql.connect(host=self.config.get("host"),
-                               user=self.config.get("user"),
-                               password=self.config.get("password"),
-                               db=self.config.get("db"),
-                               port=self.config.get("port"),
-                               charset=self.config.get("charset"))
+        return pymysql.connect(host=HOST,
+                               user=USER,
+                               password=PASSWORD,
+                               db=DB,
+                               port=PORT,
+                               charset=CHARSET)
 
     def __execute(self, query):
         self.conn = self.__connect()

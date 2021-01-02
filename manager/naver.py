@@ -3,7 +3,7 @@ import re
 
 from manager.log_manager import LogManager
 from manager.db_manager import DbManager
-from manager.utils import get_current_time
+from utils.commons import get_current_time
 
 BASE_URL = 'https://m.stock.naver.com/sise'
 

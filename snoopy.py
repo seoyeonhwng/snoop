@@ -10,7 +10,8 @@ from manager.log_manager import LogManager
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
-from manager.utils import get_current_time, read_config
+from utils.commons import get_current_time
+from utils.config import MODE
 
 NO_DATA_MSG = '어제는 아쉽게도 알려줄 내용이 없어🥺'
 
@@ -18,7 +19,7 @@ NO_DATA_MSG = '어제는 아쉽게도 알려줄 내용이 없어🥺'
 class Snoopy:
     def __init__(self):
         self.logger = LogManager().logger
-        self.mode = read_config().get('mode')
+        self.mode = MODE
         self.db_manager = DbManager()
         self.tg_manager = TgManager()
         self.api_manager = ApiManager()

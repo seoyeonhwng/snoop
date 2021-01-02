@@ -2,7 +2,7 @@ import os
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
-from manager.utils import get_current_time
+from utils.commons import get_current_time
 
 
 class LogManager:

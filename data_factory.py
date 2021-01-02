@@ -1,7 +1,7 @@
 import threading
 
 from pykrx import stock
-from manager.utils import get_current_time
+from utils.commons import get_current_time
 from manager.log_manager import LogManager
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager

@@ -7,16 +7,16 @@ import re
 import threading
 
 from manager.commander import Commander
-from manager.utils import read_config, get_current_time, REASON_CODE, STOCK_TYPE_CODE
+from utils.commons import get_current_time
+from utils.config import BOT_TOKEN, WARNING_BOT_TOKEN, WATCHDOG_BOT_TOKEN, REASON_CODE, STOCK_TYPE_CODE, ADMIN_IDS
 from telegram.ext import Updater, Dispatcher, CommandHandler, ConversationHandler, MessageHandler, Filters
 
 
 class TgManager:
     def __init__(self):
-        self.config = read_config()
-        self.bot = telegram.Bot(token=self.config.get("tg_bot_token"))
-        self.watchdog_bot = telegram.Bot(token=self.config.get("tg_watchdog_bot_token"))
-        self.warning_bot = telegram.Bot(token=self.config.get("tg_warning_bot_token"))
+        self.bot = telegram.Bot(token=BOT_TOKEN)
+        self.watchdog_bot = telegram.Bot(token=WATCHDOG_BOT_TOKEN)
+        self.warning_bot = telegram.Bot(token=WARNING_BOT_TOKEN)
         self.commander = Commander()
 
     def send_message(self, targets, message):
@@ -29,11 +29,11 @@ class TgManager:
 
     def send_warning_message(self, message):
         message += f'\n\n{get_current_time()}'
-        for admin in self.config.get("admin_ids"):
+        for admin in ADMIN_IDS:
             self.warning_bot.send_message(admin, message, timeout=30)
   
     def run(self):
-        updater = Updater(token=self.config.get("tg_bot_token"), use_context=True)
+        updater = Updater(token=BOT_TOKEN, use_context=True)
         dispatcher = updater.dispatcher
 
         start_handler = CommandHandler('start', self.commander.tg_start)

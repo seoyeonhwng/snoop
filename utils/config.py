@@ -1,23 +1,28 @@
+import sys
 import os
 import json
-from datetime import datetime, timedelta
 
+config = {}
+with open(os.path.dirname(os.path.realpath(__file__)) + '/../config.json', 'r') as _config_file:
+        config = json.load(_config_file)
 
-def read_config():
-    with open(os.path.dirname(os.path.realpath(__file__)) + '/../config.json', 'r') as _config_file:
-        return json.load(_config_file)
+if not config:
+    print('NO config.json')
+    sys.exit()
 
+MODE = config.get('mode')
+CRTFC_KEY = config.get('crtfc_key')
+WATCHDOG_BOT_TOKEN = config.get('watchdog_bot_token')
+BOT_TOKEN = config.get('bot_token')
+WARNING_BOT_TOKEN = config.get('warning_bot_token')
+ADMIN_IDS = config.get('admin_ids')
 
-def get_current_time(date_format=None, day_delta=None):
-    today = datetime.utcnow() + timedelta(hours=9)
-
-    if day_delta is not None:
-        today += timedelta(days=day_delta)
-    
-    if date_format is None:
-        return today
-    return today.strftime(date_format)
-
+HOST = config.get('mysql').get('host')
+USER = config.get('mysql').get('user')
+PASSWORD = config.get('mysql').get('password')
+DB = config.get('mysql').get('db')
+PORT = config.get('mysql').get('port')
+CHARSET = config.get('mysql').get('charset')
 
 REASON_CODE = {
     '장내매수': '01',

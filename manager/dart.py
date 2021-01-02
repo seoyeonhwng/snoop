@@ -15,7 +15,8 @@ from manager.log_manager import LogManager
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
-from manager.utils import get_current_time, REASON_CODE, STOCK_TYPE_CODE
+from utils.config import REASON_CODE, STOCK_TYPE_CODE
+from utils.commons import get_current_time
 
 NO_DATA_MSG = "[DART] 조회된 데이터가 없습니다."
 
