@@ -1,7 +1,5 @@
 import collections
-import telegram
 import re
-import threading
 from datetime import datetime
 
 from manager.db_manager import DbManager
@@ -11,7 +9,7 @@ from utils.config import REVERSE_REASON_CODE, REVERSE_STOCK_TYPE_CODE
 from utils.commons import get_current_time, read_message
 
 MAX_NICKNAME_BYTE = 30
-INVALID_USER_MSG = '💵🤲 ...'
+INVALID_USER_MSG = '💵🤲 \.\.\.'
 NO_DATA_MSG = '아쉽게도 알려줄 내용이 없어🥺'
 
 
