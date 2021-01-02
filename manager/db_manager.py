@@ -174,7 +174,3 @@ class DbManager:
                 ") AS tmp ON e.rcept_no = tmp.rcept_no"
         query = query.format(corp_name=corp_name, executive_name=executive_name, count=count)
         return self.__execute(query)
-        
-        
-
-

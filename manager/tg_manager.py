@@ -11,13 +11,13 @@ class TgManager:
         self.warning_bot = telegram.Bot(token=WARNING_BOT_TOKEN)
 
     def send_message(self, target, message):
-        self.bot.send_message(target, message, timeout=30, parse_mode=telegram.ParseMode.MARKDOWN_V2)
+        self.bot.send_message(target, message, timeout=30, parse_mode=telegram.ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
 
     def send_all_message(self, targets, message):
         for target in targets:
-            self.bot.send_message(target, message, timeout=30, parse_mode=telegram.ParseMode.MARKDOWN_V2)
+            self.bot.send_message(target, message, timeout=30, parse_mode=telegram.ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
 
     def send_warning_message(self, message):
         message += f'\n\n{get_current_time()}'
         for admin in ADMIN_IDS:
-            self.warning_bot.send_message(admin, message, timeout=30, parse_mode=telegram.ParseMode.MARKDOWN_V2)
+            self.warning_bot.send_message(admin, message, timeout=30, parse_mode=telegram.ParseMode.MARKDOWN_V2, disable_web_page_preview=True)

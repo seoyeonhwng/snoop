@@ -3,7 +3,6 @@ import os
 import time
 import collections
 import threading
-import telegram
 import multiprocessing as mp
 from datetime import datetime
 
@@ -12,11 +11,10 @@ from manager.db_manager import DbManager
 from manager.api_manager import ApiManager
 from manager.tg_manager import TgManager
 from manager.commander import Commander
-from utils.commons import get_current_time
-from utils.config import MODE, BOT_TOKEN
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from utils.commons import get_current_time
 from utils.config import BOT_TOKEN
+from utils.config import MODE
 
 
 NO_DATA_MSG = '어제는 아쉽게도 알려줄 내용이 없어🥺'
@@ -79,29 +77,30 @@ class Snoopy:
     def run(self):
         self.logger.info('Snoop Bot Started')
 
-        updater = Updater(token=BOT_TOKEN, use_context=True)
+        updater = Updater(token=BOT_TOKEN, use_context=True, workers=32)
         dispatcher = updater.dispatcher
 
         start_handler = CommandHandler('start', self.commander.tg_start, run_async=False)
-        hi_handler = CommandHandler('hi', self.commander.tg_hi, pass_args=True, run_async=False)
-        feedback_handler = CommandHandler(['feedback', 'f'], self.commander.tg_feedback, pass_args=True, run_async=False)
-        help_handler = CommandHandler(['help', 'h'], self.commander.tg_help, pass_args=True, run_async=False)
-        whoami_handler = CommandHandler(['whoami', 'w'], self.commander.tg_whoami, pass_args=True, run_async=False)
+        snoop_handler = CommandHandler(['snoop', 's'], self.commander.tg_snoop, pass_args=True, run_async=False)
         detail_handler = CommandHandler(['detail', 'd'], self.commander.tg_detail, pass_args=True, run_async=False)
-        snoop_handler = CommandHandler(['snoop', 's'], self.commander.tg_snoopy, pass_args=True, run_async=False)
         company_handler = CommandHandler(['company', 'c'], self.commander.tg_company, pass_args=True, run_async=False)
         executive_handler = CommandHandler(['executive', 'e'], self.commander.tg_executive, pass_args=True, run_async=False)
+        whoami_handler = CommandHandler(['whoami', 'w'], self.commander.tg_whoami, pass_args=True, run_async=False)
+        hi_handler = CommandHandler('hi', self.commander.tg_hi, pass_args=True, run_async=False)
+        help_handler = CommandHandler(['help', 'h'], self.commander.tg_help, pass_args=True, run_async=False)
+        feedback_handler = CommandHandler(['feedback', 'f'], self.commander.tg_feedback, pass_args=True, run_async=False)
         error_handler = MessageHandler(Filters.text & ~Filters.command, self.commander.tg_help, run_async=False)
 
         dispatcher.add_handler(start_handler)
-        dispatcher.add_handler(hi_handler)
-        dispatcher.add_handler(feedback_handler)
-        dispatcher.add_handler(help_handler)
-        dispatcher.add_handler(whoami_handler)
-        dispatcher.add_handler(detail_handler)
         dispatcher.add_handler(snoop_handler)
+        dispatcher.add_handler(detail_handler)
         dispatcher.add_handler(company_handler)
         dispatcher.add_handler(executive_handler)
+        dispatcher.add_handler(whoami_handler)
+        dispatcher.add_handler(hi_handler)
+        dispatcher.add_handler(help_handler)
+        dispatcher.add_handler(feedback_handler)
+
         dispatcher.add_handler(error_handler)
 
         updater.start_polling()
