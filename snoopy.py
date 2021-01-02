@@ -73,7 +73,7 @@ class Snoopy:
         message = self.__generate_message(data, target_date)
 
         self.logger.info(f'{target_date}/{len(targets)} start')
-        self.tg_manager.send_message(targets, message)
+        self.tg_manager.send_all_message(targets, message)
         self.logger.info(f'{target_date}/{len(targets)} end')
 
     def run(self):

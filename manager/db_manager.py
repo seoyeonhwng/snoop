@@ -85,6 +85,10 @@ class DbManager:
         query = f"DELETE FROM {table} "
         return self.__execute_commit(query)
 
+    def insert_row(self, table, params):
+        query = f'INSERT INTO {table} ({", ".join(params.keys())}) VALUES ({", ".join(["%s"] * len(params.values()))})'
+        return self.__execute_values(query, [tuple(params.values())])
+
     def insert_bulk_row(self, table, params):
         query = f'INSERT INTO {table} ({", ".join(params[0].keys())}) VALUES ({", ".join(["%s"] * len(params[0]))})'
         return self.__execute_values(query, [tuple(p.values()) for p in params])

@@ -4,7 +4,7 @@ import json
 
 config = {}
 with open(os.path.dirname(os.path.realpath(__file__)) + '/../config.json', 'r') as _config_file:
-        config = json.load(_config_file)
+    config = json.load(_config_file)
 
 if not config:
     print('NO config.json')

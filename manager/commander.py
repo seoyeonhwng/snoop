@@ -6,6 +6,7 @@ from datetime import datetime
 
 from manager.db_manager import DbManager
 from manager.log_manager import LogManager
+from manager.tg_manager import TgManager
 from utils.config import REVERSE_REASON_CODE, REVERSE_STOCK_TYPE_CODE
 from utils.commons import get_current_time, read_message
 
@@ -17,6 +18,7 @@ class Commander:
     def __init__(self):
         self.logger = LogManager().logger
         self.db_manager = DbManager()
+        self.tg_manager = TgManager()
 
     def __get_user_data(self, chat_id, nickname):
         user_data = {
@@ -281,4 +283,42 @@ class Commander:
 
         return message
 
-    
+    def __log_and_notify(self, func_name, log_msg, tg_target, tg_msg):
+        self.logger.info(f'{func_name}|{log_msg}')
+        self.tg_manager.send_message(tg_target, tg_msg)
+
+    def __get_feedback_template(self, chat_id, content):
+        feedback_data = {
+            'chat_id': chat_id,
+            'content': content,
+            'created_at': get_current_time()
+        }
+        return feedback_data
+
+    def tg_feedback(self, update, context):
+        chat_id, content = update.effective_chat.id, ' '.join(context.args)
+        log_msg = f'{chat_id}|{context.args}'
+
+        tg_msg = read_message('f_guide.txt')
+        if not content.strip():
+            context.dispatcher.run_async(
+                self.__log_and_notify,
+                'tg_feedback',
+                log_msg,
+                chat_id,
+                tg_msg,
+                update=update
+            )
+            return
+
+        tg_msg = f'좋은 의견 고마워\! 더욱 발전하는 스눕이가 될께😎'
+        feedback = self.__get_feedback_template(chat_id=chat_id, content=content)
+        self.db_manager.insert_row('feedback', feedback)
+        context.dispatcher.run_async(
+            self.__log_and_notify,
+            'tg_feedback',
+            log_msg,
+            chat_id,
+            tg_msg,
+            update=update
+        )
