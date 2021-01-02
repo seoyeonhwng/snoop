@@ -290,6 +290,8 @@ class Commander:
                 delta = f'▲{info["delta_volume"]:,}' if info["delta_volume"] > 0 else f'▼{-info["delta_volume"]:,}'
                 message += f'• {traded_on} \| {reason_code} \| {stock_type} \({delta}주 \/ {int(info["unit_price"]):,}원\)\n'
             message += '\n'
+
+        message += '\n특정 회사의 최근 스눕이 궁금하면 👉 /c\n특정 임원의 최근 스눕이 궁금하면 👉 /e'
         return message
 
     def tg_snoopy(self, update, context):
@@ -334,6 +336,8 @@ class Commander:
                 corp_name = c["corp_name"].replace('.', '\.')
                 message += f'• {corp_name} \({cap_info}\) \- {c["count"]}건\n'
             message += '\n'
+        message += '\n상세 스눕이 궁금하면 👉 /d'
+
         return message
 
     

@@ -44,6 +44,7 @@ class TgManager:
         snoop_handler = CommandHandler(['snoop', 's'], self.commander.tg_snoopy, pass_args=True)
         company_handler = CommandHandler(['company', 'c'], self.commander.tg_company, pass_args=True)
         executive_handler = CommandHandler(['executive', 'e'], self.commander.tg_executive, pass_args=True)
+        error_handler = MessageHandler(Filters.text & ~Filters.command, self.commander.tg_help, run_async=True)
 
         dispatcher.add_handler(start_handler)
         dispatcher.add_handler(hi_handler)
@@ -53,9 +54,6 @@ class TgManager:
         dispatcher.add_handler(snoop_handler)
         dispatcher.add_handler(company_handler)
         dispatcher.add_handler(executive_handler)
-
-        error_handler = MessageHandler(~Filters.regex(r'\/[start|snoop|s|detail|d|company|c|executive|e|whoami|w|hi|help|h]'), 
-                                       self.commander.tg_help)
         dispatcher.add_handler(error_handler)
 
         updater.start_polling()
