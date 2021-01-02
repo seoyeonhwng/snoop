@@ -1,5 +1,7 @@
-import logging
 import os
+import logging
+from logging.handlers import TimedRotatingFileHandler
+
 from manager.utils import get_current_time
 
 
@@ -14,13 +16,13 @@ class LogManager:
         if not os.path.exists(log_directory):
             os.mkdir(log_directory)
 
-        logging.basicConfig(
-            format="{asctime} {levelname:8} {filename:<15} {funcName:<20} {message}",
-            style="{",
-            level=logging.INFO,
-            handlers=[
-                logging.FileHandler(log_directory + get_current_time('%Y%m%d') + '.log', mode='a'),
-                logging.StreamHandler(),
-            ]
-        )
+        logging.basicConfig(level=logging.INFO,
+                            format="{asctime} {levelname:8} {filename:<15} {funcName:<20} {message}",
+                            style="{",
+                            handlers=[
+                                TimedRotatingFileHandler(log_directory + get_current_time('%Y%m%d') + '.log',
+                                                         when="midnight",
+                                                         interval=1),
+                                logging.StreamHandler(),
+                            ])
         self.logger = logging.getLogger()
