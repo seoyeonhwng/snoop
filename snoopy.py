@@ -91,7 +91,7 @@ class Snoopy:
         hi_handler = CommandHandler('hi', self.commander.tg_hi, pass_args=True, run_async=False)
         help_handler = CommandHandler(['help', 'h'], self.commander.tg_help, pass_args=True, run_async=False)
         feedback_handler = CommandHandler(['feedback', 'f'], self.commander.tg_feedback, pass_args=True, run_async=False)
-        error_handler = MessageHandler(Filters.text & ~Filters.command, self.commander.tg_help, run_async=False)
+        error_handler = MessageHandler(Filters.text & ~Filters.command, self.commander.tg_command, run_async=False)
 
         dispatcher.add_handler(start_handler)
         dispatcher.add_handler(snoop_handler)

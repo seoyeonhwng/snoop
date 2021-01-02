@@ -1,5 +1,6 @@
 import collections
 import re
+import time
 from datetime import datetime
 
 from manager.db_manager import DbManager
@@ -9,7 +10,8 @@ from utils.config import REVERSE_REASON_CODE, REVERSE_STOCK_TYPE_CODE
 from utils.commons import get_current_time, read_message
 
 MAX_NICKNAME_BYTE = 30
-INVALID_USER_MSG = '💵🤲 \.\.\.'
+# INVALID_USER_MSG = '💵🤲 \.\.\.'
+INVALID_USER_MSG = '아직 우린 친구가 아니야🥺\n회원가입부터 해줄래\?\n\n\/hi 명령어로 할 수 있어\!'
 NO_DATA_MSG = '아쉽게도 알려줄 내용이 없어🥺'
 
 
@@ -464,7 +466,29 @@ class Commander:
         log_msg = f'{chat_id}|{context.args}'
 
         # process & send
-        tg_msg = read_message('help.txt')
+        tg_msg = read_message('help1.txt')
+        context.dispatcher.run_async(
+            self.__log_and_notify,
+            'tg_help',
+            log_msg,
+            chat_id,
+            tg_msg,
+            update=update
+        )
+
+        time.sleep(1.2)
+        tg_msg = read_message('help2.txt')
+        context.dispatcher.run_async(
+            self.__log_and_notify,
+            'tg_help',
+            log_msg,
+            chat_id,
+            tg_msg,
+            update=update
+        )
+
+        time.sleep(1.2)
+        tg_msg = read_message('help3.txt')
         context.dispatcher.run_async(
             self.__log_and_notify,
             'tg_help',
@@ -512,6 +536,21 @@ class Commander:
         context.dispatcher.run_async(
             self.__log_and_notify,
             'tg_feedback',
+            log_msg,
+            chat_id,
+            tg_msg,
+            update=update
+        )
+
+    def tg_command(self, update, context):
+        chat_id = update.message.chat_id
+        log_msg = f'{chat_id}|{context.args}'
+
+        # process & send
+        tg_msg = read_message('help3.txt')
+        context.dispatcher.run_async(
+            self.__log_and_notify,
+            'tg_command',
             log_msg,
             chat_id,
             tg_msg,
