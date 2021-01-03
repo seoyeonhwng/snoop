@@ -47,6 +47,16 @@ class Commander:
         }
         return feedback_data
 
+    def __get_params_guide(self, param):
+        if param == 'input':
+            return ''
+        if param == 'corp_name':
+            return '🚫 회사의 정식 명칭을 입력해줘\.\n\n'
+        if param == 'target_date':
+            return '🚫 입력한 날짜 형식을 확인해줘\.\n\n'
+        if param == 'count':
+            return '🚫 개수는 숫자를 입력해줘\.\n\n'
+
     def __is_valid_value_format(self, key, value):
         if key == 'input':
             return value.get('length')[0] <= len(value.get('args')) <= value.get('length')[1]
@@ -57,11 +67,11 @@ class Commander:
         if key == 'count':
             return True if re.fullmatch(r'[0-9]+', value) else False
 
-    def __is_valid_params(self, params):
+    def __get_unvalid_params(self, params):
         for k, v in params.items():
             if not self.__is_valid_value_format(k, v):
-                return False
-        return True
+                return k
+        return None
     
     def __is_valid_user(self, chat_id):
         user_info = self.db_manager.get_user_info(chat_id)
@@ -195,8 +205,11 @@ class Commander:
             'input': {'args': context.args, 'length': (1, 1)},
             'target_date': context.args[0] if len(context.args) > 0 else get_current_time('%Y%m%d', -1),
         }
-        tg_msg = read_message('s_guide.txt')
-        if not self.__is_valid_params(params):
+        unvalid_param = self.__get_unvalid_params(params)
+
+        if unvalid_param:
+            tg_msg = self.__get_params_guide(unvalid_param)
+            tg_msg += read_message('s_guide.txt')
             context.dispatcher.run_async(
                 self.__log_and_notify,
                 'tg_snoop',
@@ -243,8 +256,11 @@ class Commander:
             'corp_name': context.args[0] if len(context.args) > 0 else None,
             'target_date': context.args[1] if len(context.args) > 1 else get_current_time('%Y%m%d', -1),
         }
-        tg_msg = read_message('d_guide.txt')
-        if not self.__is_valid_params(params):
+        unvalid_param = self.__get_unvalid_params(params)
+
+        if unvalid_param:
+            tg_msg = self.__get_params_guide(unvalid_param)
+            tg_msg += read_message('d_guide.txt')
             context.dispatcher.run_async(
                 self.__log_and_notify,
                 'tg_detail',
@@ -297,8 +313,11 @@ class Commander:
             'corp_name': context.args[0] if len(context.args) > 0 else None,
             'count': context.args[1] if len(context.args) > 1 else str(5),
         }
-        tg_msg = read_message('c_guide.txt')
-        if not self.__is_valid_params(params):
+        unvalid_param = self.__get_unvalid_params(params)
+
+        if unvalid_param:
+            tg_msg = self.__get_params_guide(unvalid_param)
+            tg_msg += read_message('c_guide.txt')
             context.dispatcher.run_async(
                 self.__log_and_notify,
                 'tg_company',
@@ -351,8 +370,12 @@ class Commander:
             'corp_name': context.args[0] if len(context.args) > 0 else None,
             'count': context.args[2] if len(context.args) > 2 else str(5),
         }
-        tg_msg = read_message('e_guide.txt')
-        if not self.__is_valid_params(params):
+        unvalid_param = self.__get_unvalid_params(params)
+
+        if unvalid_param:
+            tg_msg = self.__get_params_guide(unvalid_param)
+            tg_msg += read_message('e_guide.txt')
+
             context.dispatcher.run_async(
                 self.__log_and_notify,
                 'tg_executive',
