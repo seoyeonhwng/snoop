@@ -109,6 +109,7 @@ class DbManager:
               "LEFT JOIN dtnn.industry AS i ON c.industry_code = i.industry_code " \
               "WHERE e.disclosed_on = '{date}' AND e.reason_code IN ('01', '02') " \
               "AND e.stock_type IN ('01', '02') " \
+              "AND (c.industry_code is not null and c.market_capitalization != '') " \
               "GROUP BY e.rcept_no, e.stock_code, c.corp_name, c.market, c.market_capitalization, c.market_rank, i.industry_name) " \
               "AS daily_exe GROUP BY stock_code, corp_name, market, market_capitalization, market_rank, industry_name"
         query = query.format(date=date)
@@ -144,7 +145,8 @@ class DbManager:
 
     def get_corporate_info(self, corp_name):
         query = "SELECT c.corp_name, c.market, c.market_rank, c.market_capitalization " \
-              "FROM dtnn.corporate AS c WHERE c.corp_name = '{corp_name}'"
+              "FROM dtnn.corporate AS c WHERE c.corp_name = '{corp_name}'" \
+              "AND (c.industry_code is not null and c.market_capitalization != '')"
         query = query.format(corp_name=corp_name)
         return self.__execute(query)
 
@@ -159,7 +161,8 @@ class DbManager:
                 "(SELECT e.rcept_no FROM dtnn.executive AS e " \
 		        "LEFT JOIN dtnn.corporate AS c ON e.stock_code = c.stock_code " \
 	            "WHERE e.reason_code IN ('01', '02') AND e.stock_type IN ('01', '02') " \
-                "AND c.corp_name = '{corp_name}' GROUP BY e.rcept_no ORDER BY rcept_no DESC LIMIT {count} " \
+                "AND c.corp_name = '{corp_name}' AND (c.industry_code is not null and c.market_capitalization != '') " \
+                "GROUP BY e.rcept_no ORDER BY rcept_no DESC LIMIT {count} " \
                 ") AS tmp ON e.rcept_no = tmp.rcept_no"
         query = query.format(corp_name=corp_name, count=count)
         return self.__execute(query)
@@ -169,7 +172,9 @@ class DbManager:
                 "(SELECT e.rcept_no FROM dtnn.executive AS e " \
 		        "LEFT JOIN dtnn.corporate AS c ON e.stock_code = c.stock_code " \
 	            "WHERE e.reason_code IN ('01', '02') AND e.stock_type IN ('01', '02') " \
-                "AND c.corp_name = '{corp_name}' AND e.executive_name = '{executive_name}' " \
+                "AND c.corp_name = '{corp_name}' " \
+                "AND (c.industry_code is not null and c.market_capitalization != '') " \
+                "AND e.executive_name = '{executive_name}' " \
                 "GROUP BY e.rcept_no ORDER BY rcept_no DESC LIMIT {count} " \
                 ") AS tmp ON e.rcept_no = tmp.rcept_no"
         query = query.format(corp_name=corp_name, executive_name=executive_name, count=count)
