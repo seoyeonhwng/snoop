@@ -25,8 +25,15 @@ class TgManager:
         self.bot.send_message(target, message[MAX_MSG_LENGTH*q:], timeout=30, parse_mode=telegram.ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
 
     def send_all_message(self, targets, message):
+        result_msg, fail = '[스눕 메시지 전송 결과]\n\n', 0
         for target in targets:
-            self.bot.send_message(target, message, timeout=30, parse_mode=telegram.ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
+            try:
+                self.bot.send_message(target, message, timeout=30, parse_mode=telegram.ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
+            except Exception as e:
+                result_msg += f'[Error] {e} - {target}\n'
+                fail += 1
+        result_msg += f'\n\n{len(targets)}명 중 {fail}명 실패 :)'
+        self.send_warning_message(result_msg)
 
     def send_warning_message(self, message):
         for admin in ADMIN_IDS:
