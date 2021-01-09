@@ -28,7 +28,7 @@ class TgManager:
 
     def send_all_message(self, targets, message):
         result_msg, fail = '[스눕 메시지 전송 결과]\n\n', 0
-        send_logs = []
+        logs = []
         for target in targets:
             is_sent = True
             try:
@@ -38,9 +38,9 @@ class TgManager:
                 result_msg += f'[Error] {e} - {target}\n'
                 fail += 1
             finally:
-                send_logs.append({'chat_id': target, 'created_at': get_current_time(), 'is_sent': is_sent})
+                logs.append({'log_type': 'S', 'chat_id': target, 'created_at': get_current_time(), 'is_sent': is_sent})
 
-        self.db_manager.insert_bulk_row('send_logs', send_logs)
+        self.db_manager.insert_bulk_row('logs', logs)
 
         result_msg += f'\n\n{len(targets)}명 중 {fail}명 실패 :)'
         self.send_warning_message(result_msg)
