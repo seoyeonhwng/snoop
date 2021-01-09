@@ -56,7 +56,7 @@ class Snoopy:
             message += f'📌 *{industry_name}*\n'
             for c in corps:
                 cap_info = f'_{c["market"]}_ {c["market_rank"]}위'
-                corp_name = c["corp_name"].replace('.', '\.')
+                corp_name = c["corp_name"].replace('.', '\.').replace('-','\-')
                 message += f'• {corp_name} \({cap_info}\) \- {c["count"]}건\n'
             message += '\n'
 
