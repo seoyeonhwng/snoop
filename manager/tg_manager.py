@@ -1,5 +1,6 @@
 import telegram
 
+from manager.db_manager import DbManager
 from utils.commons import get_current_time
 from utils.config import BOT_TOKEN, WARNING_BOT_TOKEN, WATCHDOG_BOT_TOKEN, ADMIN_IDS, TG_CONN_POOL
 
@@ -13,6 +14,7 @@ class TgManager:
         self.bot = telegram.Bot(token=BOT_TOKEN, request=Request(con_pool_size=TG_CONN_POOL))
         self.watchdog_bot = telegram.Bot(token=WATCHDOG_BOT_TOKEN)
         self.warning_bot = telegram.Bot(token=WARNING_BOT_TOKEN)
+        self.db_manager = DbManager()
 
     def send_message(self, target, message):
         q = len(message) // MAX_MSG_LENGTH
@@ -26,12 +28,20 @@ class TgManager:
 
     def send_all_message(self, targets, message):
         result_msg, fail = '[스눕 메시지 전송 결과]\n\n', 0
+        send_logs = []
         for target in targets:
+            is_sent = True
             try:
                 self.bot.send_message(target, message, timeout=30, parse_mode=telegram.ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
             except Exception as e:
+                is_sent = False
                 result_msg += f'[Error] {e} - {target}\n'
                 fail += 1
+            finally:
+                send_logs.append({'chat_id': target, 'created_at': get_current_time(), 'is_sent': is_sent})
+
+        self.db_manager.insert_bulk_row('send_logs', send_logs)
+
         result_msg += f'\n\n{len(targets)}명 중 {fail}명 실패 :)'
         self.send_warning_message(result_msg)
 
