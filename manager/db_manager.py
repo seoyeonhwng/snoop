@@ -103,15 +103,11 @@ class DbManager:
         return self.__execute_values(query, data)
 
     def get_disclosure_data(self, date):
-        query = "SELECT stock_code, corp_name, market, market_capitalization, market_rank, industry_name, count(*) AS count " \
-              "FROM (SELECT e.rcept_no, e.stock_code, c.corp_name, c.market, c.market_capitalization, c.market_rank, i.industry_name " \
-              "FROM dtnn.executive AS e LEFT JOIN dtnn.corporate AS c ON e.stock_code = c.stock_code " \
-              "LEFT JOIN dtnn.industry AS i ON c.industry_code = i.industry_code " \
-              "WHERE e.disclosed_on = '{date}' AND e.reason_code IN ('01', '02') " \
-              "AND e.stock_type IN ('01', '02') " \
-              "AND (c.industry_code is not null and c.market_capitalization != '') " \
-              "GROUP BY e.rcept_no, e.stock_code, c.corp_name, c.market, c.market_capitalization, c.market_rank, i.industry_name) " \
-              "AS daily_exe GROUP BY stock_code, corp_name, market, market_capitalization, market_rank, industry_name"
+        query = "SELECT e.rcept_no, e.stock_code, e.delta_volume, e.unit_price, c.corp_name, c.market, c.market_capitalization, c.market_rank, i.industry_name " \
+                "FROM dtnn.executive AS e LEFT JOIN dtnn.corporate AS c ON e.stock_code = c.stock_code " \
+                "LEFT JOIN dtnn.industry AS i ON c.industry_code = i.industry_code " \
+                "WHERE e.disclosed_on = '{date}' AND e.reason_code IN ('01', '02') AND e.stock_type IN ('01') " \
+                "AND (c.industry_code is not null and c.market_capitalization != '') "
         query = query.format(date=date)
         return self.__execute(query)
 
