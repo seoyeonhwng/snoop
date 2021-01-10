@@ -10,6 +10,7 @@ from manager.log_manager import LogManager
 from manager.db_manager import DbManager
 from manager.api_manager import ApiManager
 from manager.tg_manager import TgManager
+from manager.msg_manager import MsgManager
 from manager.commander import Commander
 from utils.commons import get_current_time
 from utils.config import BOT_TOKEN
@@ -19,8 +20,6 @@ from utils.config import TG_WORKERS
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 
-NO_DATA_MSG = '어제는 아쉽게도 알려줄 내용이 없어🥺'
-
 
 class Snoopy:
     def __init__(self):
@@ -29,6 +28,7 @@ class Snoopy:
         self.db_manager = DbManager()
         self.api_manager = ApiManager()
         self.tg_manager = TgManager()
+        self.msg_manager = MsgManager()
         self.commander = Commander()
 
     def __get_executive_data(self, data):
@@ -38,69 +38,12 @@ class Snoopy:
         f = lambda x: x.get('report_nm') == '임원ㆍ주요주주특정증권등소유상황보고서' and x.get('corp_cls') in ['Y', 'K']
         return [d for d in data if f(d)]
 
-    def __get_signal(self, amount):
-        if amount <= 50000000:
-            return '❗️'
-        if amount <= 100000000:
-            return '‼️'
-        return '🔥'
-
-    def __generate_message(self, data, target_date):
-        message = f'💌 굿모닝\! 나는 __*스눕*__이야 \n      ' + target_date.replace("-", "\/") + '의 스눕 결과를 알려줄게👀\n\n'
-        message += '✔️ 장내매수\/매도 \(KOSPI\/KOSDAQ 보통주\)\n'
-        message += '✔️ 임원별 총 거래 금액 알림 지표\n'
-        message += '      🔥: 1억\~  ‼️: 5천\~1억 ❗: 1천\~5천\n'
-        message += '✔️ 특정 회사의 상세 스눕이 궁금하면 👉 \/d\n\n\n'
-
-        if not data:
-            message += f'{NO_DATA_MSG}\n'
-            return message
-  
-        rcept_groupby_data = collections.defaultdict(list)
-        for d in data: 
-            rcept_groupby_data[d['rcept_no']].append(d)
-        
-        corp_infos, industry_corp_map = {}, collections.defaultdict(set)
-        for rcept in rcept_groupby_data.values():
-            total_amount = sum([r['delta_volume'] * r['unit_price'] for r in rcept])
-            if total_amount < 10000000:
-                continue
-
-            corp_code, corp_name, industry_name = rcept[0]['corp_code'], rcept[0]['corp_name'], rcept[0]['industry_name'] 
-            industry_corp_map[industry_name].add(corp_code)
-
-            if corp_code not in corp_infos:
-                corp_infos[corp_code] = {
-                    'corp_name': corp_name.replace('-', '\-').replace('.', '\.'),
-                    'count' : 1,
-                    'max_total_amount': total_amount
-                }
-            else:
-                corp_infos[corp_code]['count'] += 1
-                corp_infos[corp_code]['max_total_amount'] = max(corp_infos[corp_code]['max_total_amount'], total_amount)
-
-        for industry_name in [d['industry_name'] for d in self.db_manager.get_industry_list()]:
-            corporates = industry_corp_map.get(industry_name)
-            if not corporates:
-                continue
-            
-            message += f'🐮 *{industry_name}*\n'
-            for corp in corporates:
-                info = corp_infos.get(corp)
-                message += f'• {info["corp_name"]}\({info["count"]}건\) {self.__get_signal(info["max_total_amount"])}\n'
-            message += '\n'
-
-        return message
-
     def send_daily_notice(self, target_date):
         target_date = get_current_time('%Y%m%d', -1) if not target_date else target_date
-        target_date = datetime.strptime(target_date.replace('-', ''), '%Y%m%d').strftime('%Y-%m-%d')
-
+        
         targets = self.db_manager.get_targets()
         targets = set([t.get('chat_id') for t in targets])
-
-        data = self.db_manager.get_disclosure_data(target_date)
-        message = self.__generate_message(data, target_date)
+        message = self.msg_manager.get_snoop_message(target_date)
 
         self.logger.info(f'{target_date}/{len(targets)} start')
         self.tg_manager.send_all_message(targets, message)
@@ -121,7 +64,8 @@ class Snoopy:
         hi_handler = CommandHandler('hi', self.commander.tg_hi, pass_args=True, run_async=False)
         help_handler = CommandHandler(['help', 'h'], self.commander.tg_help, pass_args=True, run_async=False)
         feedback_handler = CommandHandler(['feedback', 'f'], self.commander.tg_feedback, pass_args=True, run_async=False)
-        error_handler = MessageHandler(Filters.text & ~Filters.command, self.commander.tg_command, run_async=False)
+
+        error_handler = MessageHandler(Filters.text | Filters.command, self.commander.tg_command, run_async=False)
 
         dispatcher.add_handler(start_handler)
         dispatcher.add_handler(snoop_handler)

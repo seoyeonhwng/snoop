@@ -16,3 +16,9 @@ def get_current_time(date_format=None, day_delta=None):
 def read_message(file_name):
     with open(os.path.dirname(os.path.realpath(__file__)) + f'/message/{file_name}', 'r') as f:
         return f.read()
+
+def convert_format(date, before, after):
+    return datetime.strptime(date, before).strftime(after)
+
+def convert_to_str(date, format):
+    return date.strftime(format)

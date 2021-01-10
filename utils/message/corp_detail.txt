@@ -1,0 +1,3 @@
+✔️ {market} {market_rank}위
+✔️ 시가총액 {market_capitalization:,}원
+

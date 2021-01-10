@@ -7,13 +7,12 @@ from datetime import datetime
 from manager.db_manager import DbManager
 from manager.log_manager import LogManager
 from manager.tg_manager import TgManager
-from utils.config import REVERSE_REASON_CODE, REVERSE_STOCK_TYPE_CODE
+from manager.msg_manager import MsgManager
 from utils.commons import get_current_time, read_message
 
 MAX_NICKNAME_BYTE = 30
 # INVALID_USER_MSG = '💵🤲 \.\.\.'
 INVALID_USER_MSG = '아직 우린 친구가 아니야🥺\n회원가입부터 해줄래\?\n\n\/hi 명령어로 할 수 있어\!'
-NO_DATA_MSG = '아쉽게도 이 날은 주식 거래를 한 임원이 없어🥺'
 
 
 class Commander:
@@ -21,6 +20,7 @@ class Commander:
         self.logger = LogManager().logger
         self.db_manager = DbManager()
         self.tg_manager = TgManager()
+        self.msg_manager = MsgManager()
 
     def __log_and_notify(self, func_name, log_msg, tg_target, tg_msg):
         self.logger.info(f'{func_name}|{log_msg}')
@@ -79,96 +79,6 @@ class Commander:
             return True
         return False
 
-    def __get_greeting(self):
-        current_hour = int(get_current_time('%H'))
-        if 0 <= current_hour < 8:
-            return r'졸려\.\.\.'
-        if 8 <= current_hour < 12:
-            return r'굿모닝\!'
-        if 12 <= current_hour < 18:
-            return r'굿애프터눈\!'
-        if 18 <= current_hour < 24:
-            return r'굿이브닝\!'
-
-    def __generate_snoopy_messsage(self, data, target_date):
-        target_date = datetime.strptime(target_date.replace('-', ''), '%Y%m%d').strftime('%Y/%m/%d')
-        message = f'💌 {self.__get_greeting()} 나는 __*스눕*__이야\n'
-        message += f'      ' + target_date.replace("/", "\/") + '의 스눕 결과를 알려줄게👀\n\n'
-        message += f'✔️ KOSPI, KOSDAQ 대상\n'
-        message += f'✔️ 순수 장내매수, 장내매도 한정\n'
-        message += f'✔️ 공시횟수, 시가총액 내림차순\n\n\n'
-
-        if not data:
-            message += f'{NO_DATA_MSG}\n'
-            return message
-
-        industry_corporates = collections.defaultdict(list)
-        for d in sorted(data, key=lambda data:(data['count'], int(data['market_capitalization'])), reverse=True):
-            industry_corporates[d['industry_name']].append(d)
-
-        for industry_name, corps in industry_corporates.items():
-            message += f'📌 *{industry_name}*\n'
-            for c in corps:
-                cap_info = f'_{c["market"]}_ {c["market_rank"]}위'
-                corp_name = c["corp_name"].replace('.', '\.')
-                message += f'• {corp_name} \({cap_info}\) \- {c["count"]}건\n'
-            message += '\n'
-        message += '\n특정 회사의 상세 스눕이 궁금하면 👉 /d'
-
-        return message
-
-    def __generate_detail_message_header(self, corp_info):
-        message = f'✔️ {corp_info["market"]} {corp_info["market_rank"]}위\n'
-        message += f'✔️ 시가총액 {int(corp_info["market_capitalization"]):,}원\n\n\n'
-        return message
-    
-    def __generate_detail_message_body(self, data):
-        if not data:
-            return NO_DATA_MSG
-           
-        details = collections.defaultdict(list)
-        for d in data:
-            details[d['executive_name']].append(d)
-        
-        message = ''
-        for e_name, infos in details.items():
-            report_url = f'http://dart.fss.or.kr/dsaf001/main.do?rcpNo={infos[0]["rcept_no"]}'
-            message += f'👉 [{e_name}]({report_url})\n'
-            
-            for info in infos:
-                traded_on = info['traded_on'].strftime('%m/%d').replace('/', '\/')
-                reason_code = REVERSE_REASON_CODE.get(info['reason_code'])
-                stock_type = REVERSE_STOCK_TYPE_CODE.get(info['stock_type'])
-                delta = f'▲{info["delta_volume"]:,}' if info["delta_volume"] > 0 else f'▼{-info["delta_volume"]:,}'
-                message += f'• {traded_on} \| {reason_code} \| {stock_type} \({delta}주 \/ {int(info["unit_price"]):,}원\)\n'
-            message += '\n'
-
-        message += '\n특정 회사의 상세 스눕이 궁금하면 👉 /d\n특정 회사의 최근 스눕이 궁금하면 👉 /c\n특정 임원의 최근 스눕이 궁금하면 👉 /e'
-        return message
-
-    def __generate_executive_message_body(self, data):
-        if not data:
-            return NO_DATA_MSG
-
-        details = collections.defaultdict(list)
-        for d in data:
-            details[d['rcept_no']].append(d)
-
-        message = ''
-        for rcept_no, infos in details.items():
-            report_url = f'http://dart.fss.or.kr/dsaf001/main.do?rcpNo={rcept_no}'
-            disclosed_on = str(infos[0]["disclosed_on"])[:10].replace('-', '\/')
-            message += f'👉 [{disclosed_on}]({report_url})\n'
-
-            for info in infos:
-                traded_on = info['traded_on'].strftime('%m/%d').replace('/', '\/')
-                reason_code = REVERSE_REASON_CODE.get(info['reason_code'])
-                stock_type = REVERSE_STOCK_TYPE_CODE.get(info['stock_type'])
-                delta = f'▲{info["delta_volume"]:,}' if info["delta_volume"] > 0 else f'▼{-info["delta_volume"]:,}'
-                message += f'• {traded_on} \| {reason_code} \| {stock_type} \({delta}주 \/ {int(info["unit_price"]):,}원\)\n'
-            message += '\n'
-        return message
-
     def tg_start(self, update, context):
         chat_id = update.effective_chat.id
         log_msg = f'{chat_id}|{context.args}'
@@ -222,8 +132,8 @@ class Commander:
 
         # process & send
         target_date = params.get('target_date')
-        data = self.db_manager.get_disclosure_data(target_date)
-        tg_msg = self.__generate_snoopy_messsage(data, target_date)
+        tg_msg = self.msg_manager.get_snoop_message(target_date)
+
         context.dispatcher.run_async(
             self.__log_and_notify,
             'tg_snoop',
@@ -273,13 +183,7 @@ class Commander:
 
         # process & send
         corp_name, target_date = context.args[0], params.get('target_date')
-        corp_info = self.db_manager.get_corporate_info(corp_name)
-        data = self.db_manager.get_tg_detail_data(corp_name, target_date)
-        target_date = target_date[:4] + '\/' + target_date[4:6] + '\/' + target_date[6:]
-
-        tg_msg = f'📈 {target_date} __*{corp_info[0]["corp_name"]}*__ 변동 내역\n\n'
-        tg_msg += self.__generate_detail_message_header(corp_info[0])
-        tg_msg += self.__generate_detail_message_body(data)
+        tg_msg = self.msg_manager.get_detail_message(corp_name, target_date)
 
         context.dispatcher.run_async(
             self.__log_and_notify,
@@ -329,14 +233,8 @@ class Commander:
             return
 
         # process & send
-        corp_name = context.args[0]
-        count = min(int(params.get('count')), 10)
-        corp_info = self.db_manager.get_corporate_info(corp_name)
-        data = self.db_manager.get_tg_company_data(corp_name, count)
-
-        tg_msg = f'🏢 __*{corp_name}*__ TOP{count} 변동 내역\n\n'
-        tg_msg += self.__generate_detail_message_header(corp_info[0])
-        tg_msg += self.__generate_detail_message_body(data)
+        corp_name, count = context.args[0], min(int(params.get('count')), 10)
+        tg_msg = self.msg_manager.get_company_message(corp_name, count)
 
         context.dispatcher.run_async(
             self.__log_and_notify,
@@ -389,12 +287,7 @@ class Commander:
         # process & send
         corp_name, executive_name = context.args[0], context.args[1]
         count = min(int(params.get('count')), 10)
-        corp_info = self.db_manager.get_corporate_info(corp_name)
-        data = self.db_manager.get_tg_executive_data(corp_name, executive_name, count)
-
-        tg_msg = f'🏢 __*{corp_name}\({executive_name}\)*__ TOP{count} 변동 내역\n\n'
-        tg_msg += self.__generate_detail_message_header(corp_info[0])
-        tg_msg += self.__generate_executive_message_body(data)
+        tg_msg = self.msg_manager.get_executive_message(corp_name, executive_name, count)
 
         context.dispatcher.run_async(
             self.__log_and_notify,
