@@ -113,7 +113,7 @@ class Commander:
                 corp_name = c["corp_name"].replace('.', '\.')
                 message += f'• {corp_name} \({cap_info}\) \- {c["count"]}건\n'
             message += '\n'
-        message += '\n상세 스눕이 궁금하면 👉 /d'
+        message += '\n특정 회사의 상세 스눕이 궁금하면 👉 /d'
 
         return message
 

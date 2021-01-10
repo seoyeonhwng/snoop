@@ -38,26 +38,56 @@ class Snoopy:
         f = lambda x: x.get('report_nm') == '임원ㆍ주요주주특정증권등소유상황보고서' and x.get('corp_cls') in ['Y', 'K']
         return [d for d in data if f(d)]
 
+    def __get_signal(self, amount):
+        if amount <= 50000000:
+            return '❗️'
+        if amount <= 100000000:
+            return '‼️'
+        return '🔥'
+
     def __generate_message(self, data, target_date):
-        message = f'💌 굿모닝\! 나는 __*스눕*__이야 \n      어제의 스눕 결과를 알려줄게👀\n\n'
-        message += f'✔️ ' + target_date.replace("-", "\/") + ' / KOSPI, KOSDAQ 대상\n'
-        message += f'✔️ 순수 장내매수, 장내매도 한정\n'
-        message += f'✔️ 공시횟수, 시가총액 내림차순\n\n\n'
+        message = f'💌 굿모닝\! 나는 __*스눕*__이야 \n      ' + target_date.replace("-", "\/") + '의 스눕 결과를 알려줄게👀\n\n'
+        message += '✔️ 장내매수\/매도 \(KOSPI\/KOSDAQ 보통주\)\n'
+        message += '✔️ 임원별 총 거래 금액 알림 지표\n'
+        message += '      🔥: 1억\~  ‼️: 5천\~1억 ❗: 1천\~5천\n'
+        message += '✔️ 특정 회사의 상세 스눕이 궁금하면 👉 \/d\n\n\n'
 
         if not data:
             message += f'{NO_DATA_MSG}\n'
             return message
+  
+        rcept_groupby_data = collections.defaultdict(list)
+        for d in data: 
+            rcept_groupby_data[d['rcept_no']].append(d)
+        
+        corp_infos, industry_corp_map = {}, collections.defaultdict(set)
+        for rcept in rcept_groupby_data.values():
+            total_amount = sum([r['delta_volume'] * r['unit_price'] for r in rcept])
+            if total_amount < 10000000:
+                continue
 
-        industry_corporates = collections.defaultdict(list)
-        for d in sorted(data, key=lambda data:(data['count'], int(data['market_capitalization'])), reverse=True):
-            industry_corporates[d['industry_name']].append(d)
+            corp_code, corp_name, industry_name = rcept[0]['corp_code'], rcept[0]['corp_name'], rcept[0]['industry_name'] 
+            industry_corp_map[industry_name].add(corp_code)
 
-        for industry_name, corps in industry_corporates.items():
-            message += f'📌 *{industry_name}*\n'
-            for c in corps:
-                cap_info = f'_{c["market"]}_ {c["market_rank"]}위'
-                corp_name = c["corp_name"].replace('.', '\.').replace('-','\-')
-                message += f'• {corp_name} \({cap_info}\) \- {c["count"]}건\n'
+            if corp_code not in corp_infos:
+                corp_infos[corp_code] = {
+                    'corp_name': corp_name.replace('-', '\-').replace('.', '\.'),
+                    'count' : 1,
+                    'max_total_amount': total_amount
+                }
+            else:
+                corp_infos[corp_code]['count'] += 1
+                corp_infos[corp_code]['max_total_amount'] = max(corp_infos[corp_code]['max_total_amount'], total_amount)
+
+        for industry_name in [d['industry_name'] for d in self.db_manager.get_industry_list()]:
+            corporates = industry_corp_map.get(industry_name)
+            if not corporates:
+                continue
+            
+            message += f'🐮 *{industry_name}*\n'
+            for corp in corporates:
+                info = corp_infos.get(corp)
+                message += f'• {info["corp_name"]}\({info["count"]}건\) {self.__get_signal(info["max_total_amount"])}\n'
             message += '\n'
 
         return message
