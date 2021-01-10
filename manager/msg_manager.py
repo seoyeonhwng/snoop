@@ -1,4 +1,6 @@
 from collections import defaultdict
+import os
+import csv
 
 from manager.db_manager import DbManager
 from utils.commons import get_current_time, read_message, convert_format, convert_to_str
@@ -26,6 +28,16 @@ class MsgManager:
             return '‼️'
         return '🔥'
 
+    def __get_corp_frequency(self):
+        corp_frequency = {}
+        file_path = os.path.dirname(os.path.realpath(__file__)) + '/../corp_frequency.csv'
+
+        with open(file_path, 'r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                corp_frequency[row['corp_code']] = int(row['count'])
+        return corp_frequency
+        
     def __get_snoop_header(self, target_date):
         target_date = convert_format(target_date, '%Y%m%d', '%Y-%m-%d').replace("-", "\/")
         greeting = self.__get_greeting()
@@ -60,7 +72,7 @@ class MsgManager:
                 corp_infos[corp_code]['count'] += 1
                 corp_infos[corp_code]['max_total_amount'] = max(corp_infos[corp_code]['max_total_amount'], total_amount)
         
-        message = ''
+        message, corp_frequency = '', self.__get_corp_frequency()
         for industry_name in [d['industry_name'] for d in self.db_manager.get_industry_list()]:
             corporates = industry_corp_map.get(industry_name)
             if not corporates:
@@ -70,7 +82,9 @@ class MsgManager:
             for corp in corporates:
                 info = corp_infos.get(corp)
                 message += f'• {info["corp_name"]}\({info["count"]}건\) {self.__get_signal(info["max_total_amount"])}\n'
+                message += f'\# 최근\_일주일\_{corp_frequency.get(corp)}번\_등장\n' if corp_frequency.get(corp) >= 3 else ''
             message += '\n'
+
         return message
     
     def __get_corp_detail(self, corp_name):
@@ -108,7 +122,7 @@ class MsgManager:
         return message
 
     def get_snoop_message(self, target_date):
-        data = self.db_manager.get_disclosure_data(target_date)
+        data = self.db_manager.get_disclosure_data(target_date, target_date)
 
         message = self.__get_snoop_header(target_date)
         message += self.__get_snoop_body(data)

@@ -102,13 +102,13 @@ class DbManager:
               "`market` = VALUES(`market`), `market_capitalization` = VALUES(`market_capitalization`), `market_rank` = VALUES(`market_rank`), `updated_at` = VALUES(`updated_at`) "
         return self.__execute_values(query, data)
 
-    def get_disclosure_data(self, date):
-        query = "SELECT e.rcept_no, e.stock_code, e.delta_volume, e.unit_price, c.corp_code, c.corp_name, c.market, c.market_capitalization, c.market_rank, i.industry_name " \
+    def get_disclosure_data(self, start_date, end_date):
+        query = "SELECT e.disclosed_on, e.rcept_no, e.stock_code, e.delta_volume, e.unit_price, c.corp_code, c.corp_name, c.market, c.market_capitalization, c.market_rank, i.industry_name " \
                 "FROM dtnn.executive AS e LEFT JOIN dtnn.corporate AS c ON e.stock_code = c.stock_code " \
                 "LEFT JOIN dtnn.industry AS i ON c.industry_code = i.industry_code " \
-                "WHERE e.disclosed_on = '{date}' AND e.reason_code IN ('01', '02') AND e.stock_type IN ('01') " \
+                "WHERE (e.disclosed_on BETWEEN '{start_date}' AND '{end_date}') AND e.reason_code IN ('01', '02') AND e.stock_type IN ('01') " \
                 "AND (c.industry_code is not null and c.market_capitalization != '') "
-        query = query.format(date=date)
+        query = query.format(start_date=start_date, end_date=end_date)
         return self.__execute(query)
 
     def unvalidate_corporates(self):

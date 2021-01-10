@@ -1,4 +1,7 @@
 import threading
+from collections import defaultdict
+import csv
+import os
 
 from pykrx import stock
 from utils.commons import get_current_time
@@ -76,6 +79,31 @@ class DataFactory:
                 c['market_rank'] = tmp.get('market_rank')
         return _corporates
 
+    def calculate_corp_frequency(self, end_date):
+        start_date = get_current_time('%Y%m%d', -6)
+        data = self.db_manager.get_disclosure_data(start_date, end_date)
+
+        groupby_rcept = defaultdict(list)
+        for d in data:
+            groupby_rcept[d['rcept_no']].append(d)
+        
+        corp_frequency = defaultdict(set)
+        for rcept in groupby_rcept.values():
+            total_amount = abs(sum([r['delta_volume'] * r['unit_price'] for r in rcept]))
+            if total_amount < 10000000:
+                continue
+
+            corp_code, disclosed_on = rcept[0]['corp_code'], rcept[0]['disclosed_on']
+            corp_frequency[corp_code].add(disclosed_on)
+
+        csv_data = [{'corp_code':k, 'count':len(v)} for k, v in corp_frequency.items()]
+        file_path = os.path.dirname(os.path.realpath(__file__)) + '/corp_frequency.csv'
+
+        with open(file_path, 'w') as file:
+            writer = csv.DictWriter(file, fieldnames=['corp_code', 'count'])
+            writer.writeheader()
+            writer.writerows(csv_data)
+
     def run(self):
         target_date = get_current_time('%Y%m%d')
         self.logger.info(f"{target_date} Data Factory Start!")
@@ -94,31 +122,37 @@ class DataFactory:
         tg_msg += f"{step2_msg}\n"
         self.logger.info(f"{step2_msg}")
 
+        # [step3] calculate the number of apperances by company (7days)
+        self.calculate_corp_frequency(target_date)
+        step3_msg = "[step3] calculate_corp_frequency"
+        tg_msg += f"{step3_msg}\n"
+        self.logger.info(f"{step3_msg}")
+
         tickers = stock.get_market_ticker_list(target_date)
         if not tickers:
             tg_msg += f"\n\n{target_date} Partially Loaded:)"
             threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
             return
 
-        # [step3] bulk insert ticker
+        # [step4] bulk insert ticker
         markets = ["KOSPI", "KOSDAQ"]
         for market in markets:
             tickers = self.get_ticker_info(market, target_date)
             if not self.db_manager.insert_bulk_row('ticker', tickers):
                 return
-        step3_msg = "[step3] bulk insert ticker"
-        tg_msg += f"{step3_msg}\n"
-        self.logger.info(f"{step3_msg}")
+        step4_msg = "[step4] bulk insert ticker"
+        tg_msg += f"{step4_msg}\n"
+        self.logger.info(f"{step4_msg}")
 
-        # [step4] bulk insert corporate
+        # [step5] bulk insert corporate
         self.db_manager.unvalidate_corporates()
         corporates = self.dart.build_corporate_list(self.get_empty_corporate())  # from dart
         corporates = self.naver.fill_industry_corporate(corporates)  # from naver
         corporates = self.fill_ticker_corporate(corporates, target_date)  # from ticker
         self.db_manager.update_or_insert_corporate([tuple(c.values()) for c in corporates])
-        step4_msg = "[step4] bulk insert corporate"
-        tg_msg += f"{step4_msg}\n"
-        self.logger.info(f"{step4_msg}")
+        step5_msg = "[step5] bulk insert corporate"
+        tg_msg += f"{step5_msg}\n"
+        self.logger.info(f"{step5_msg}")
 
         tg_msg += f"\n\n{target_date} Fully Loaded:)"
         threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
