@@ -24,11 +24,12 @@ class Naver:
         data = re.findall(exp, resp.text)
 
         industry_list = []
-        for d in data:
+        for i, d in enumerate(data):
             p = {
                 'industry_code': d[0],
                 'industry_name': d[1],
-                'created_at': get_current_time()
+                'created_at': get_current_time(),
+                'order_id': i+1
             }
             industry_list.append(p)
         return industry_list
