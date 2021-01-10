@@ -1,10 +1,8 @@
 import sys
 import os
 import time
-import collections
 import threading
 import multiprocessing as mp
-from datetime import datetime
 
 from manager.log_manager import LogManager
 from manager.db_manager import DbManager
@@ -20,7 +18,6 @@ from utils.config import TG_WORKERS
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 
-
 class Snoopy:
     def __init__(self):
         self.logger = LogManager().logger
@@ -30,13 +27,6 @@ class Snoopy:
         self.tg_manager = TgManager()
         self.msg_manager = MsgManager()
         self.commander = Commander()
-
-    def __get_executive_data(self, data):
-        """
-        임원 관련 보고서와 유가, 코스닥 데이터만 가지고 온다.
-        """
-        f = lambda x: x.get('report_nm') == '임원ㆍ주요주주특정증권등소유상황보고서' and x.get('corp_cls') in ['Y', 'K']
-        return [d for d in data if f(d)]
 
     def send_daily_notice(self, target_date):
         target_date = get_current_time('%Y%m%d', -1) if not target_date else target_date
