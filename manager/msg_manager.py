@@ -121,7 +121,7 @@ class MsgManager:
             message += '\n'
         return message
 
-    def get_snoop_message(self, target_date, is_daily=False):
+    def get_snoop_message(self, target_date, is_daily):
         data = self.db_manager.get_disclosure_data(target_date, target_date)
 
         message = self.__get_snoop_header(target_date)
