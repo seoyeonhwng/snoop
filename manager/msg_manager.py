@@ -45,7 +45,7 @@ class MsgManager:
         message = read_message('s_header.txt').format(greeting=greeting, target_date=target_date)
         return message
         
-    def __get_snoop_body(self, data):
+    def __get_snoop_body(self, data, is_daily):
         if not data:
             return read_message('no_data.txt')
         
@@ -82,7 +82,7 @@ class MsgManager:
             for corp in corporates:
                 info = corp_infos.get(corp)
                 message += f'• {info["corp_name"]}\({info["count"]}건\) {self.__get_signal(info["max_total_amount"])}\n'
-                message += f'\# 최근\_일주일\_{corp_frequency.get(corp)}번\_등장\n' if corp_frequency.get(corp) >= 3 else ''
+                message += f'\# 최근\_일주일\_{corp_frequency.get(corp)}번\_등장\n' if corp_frequency.get(corp) >= 3 and is_daily else ''
             message += '\n'
 
         return message
@@ -121,11 +121,11 @@ class MsgManager:
             message += '\n'
         return message
 
-    def get_snoop_message(self, target_date):
+    def get_snoop_message(self, target_date, is_daily=False):
         data = self.db_manager.get_disclosure_data(target_date, target_date)
 
         message = self.__get_snoop_header(target_date)
-        message += self.__get_snoop_body(data)
+        message += self.__get_snoop_body(data, is_daily)
         return message
 
     def get_detail_message(self, corp_name, target_date):

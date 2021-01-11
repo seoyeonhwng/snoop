@@ -132,7 +132,7 @@ class Commander:
 
         # process & send
         target_date = params.get('target_date')
-        tg_msg = self.msg_manager.get_snoop_message(target_date)
+        tg_msg = self.msg_manager.get_snoop_message(target_date, is_daily=False)
 
         context.dispatcher.run_async(
             self.__log_and_notify,
