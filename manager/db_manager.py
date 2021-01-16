@@ -175,3 +175,15 @@ class DbManager:
                 ") AS tmp ON e.rcept_no = tmp.rcept_no"
         query = query.format(corp_name=corp_name, executive_name=executive_name, count=count)
         return self.__execute(query)
+
+    def get_last_business_date(self):
+        query = "select business_date from ticker " \
+                "order by business_date desc " \
+                "limit 1"
+        return self.__execute(query)[0].get('business_date')
+
+    def get_highest_price(self, last_business_date):
+        query = "select max((high * 1)) as highest_price from ticker " \
+                "where business_date = '{last_business_date}'"
+        query = query.format(last_business_date=last_business_date)
+        return self.__execute(query)[0].get('highest_price')

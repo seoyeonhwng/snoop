@@ -1,5 +1,6 @@
 config.json
 logs/
+corp_frequency.csv
 
 # pyCharm
 .idea/

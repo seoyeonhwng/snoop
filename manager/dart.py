@@ -16,7 +16,7 @@ from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.api_manager import ApiManager
 from utils.config import REASON_CODE, STOCK_TYPE_CODE
-from utils.commons import get_current_time
+from utils.commons import get_current_time, convert_to_str
 
 NO_DATA_MSG = "[DART] 조회된 데이터가 없습니다."
 
@@ -53,7 +53,7 @@ class Dart:
 
         if text_type == 'price':
             text = '0.0' if text == '-' else text
-            text = text.replace('.', ',', text.count('.') - 1) if text.count('.') > 1 else text # 오타 방지를 위해 마지막 .만 소수점으로 처리
+            text = text.replace('.', ',', text.count('.') - 1) if text.count('.') > 1 else text  # 오타 방지를 위해 마지막 .만 소수점으로 처리
             text = re.compile('[^0-9.]').sub('', text)
             return 0.0 if text in ['', '-'] else float(text)
 
@@ -99,6 +99,8 @@ class Dart:
                      'delta_volume', 'after_volume', 'unit_price', 'remark']
         col_types = ['text', 'date', 'text', 'volume', 'volume', 'volume', 'price', 'text']
 
+        last_business_date = convert_to_str(self.db_manager.get_last_business_date(), '%Y%m%d')
+        highest_price = self.db_manager.get_highest_price(last_business_date)
         for row in rows[2:-1]:
             row_content = [r.text for r in row if r.name == 'td']
             p = self.get_empty_data(_rcept_no, _rcept_dt, _stock_code, _executive_name)
@@ -111,7 +113,10 @@ class Dart:
                 'reason_code']
             p['stock_type'] = STOCK_TYPE_CODE.get(p['stock_type']) if STOCK_TYPE_CODE.get(p['stock_type']) else p[
                 'stock_type']
-            stock_detail.append(p)
+
+            if p['unit_price'] <= highest_price:  # unit_price parsing 문제로, 전일 최고가보다 낮은 기격의 공시만 인정한다.
+                print(f"{p['unit_price']} / {highest_price}")
+                stock_detail.append(p)
 
         return stock_detail
 

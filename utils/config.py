@@ -16,6 +16,9 @@ WATCHDOG_BOT_TOKEN = config.get('watchdog_bot_token')
 BOT_TOKEN = config.get('bot_token')
 WARNING_BOT_TOKEN = config.get('warning_bot_token')
 ADMIN_IDS = config.get('admin_ids')
+MINIMUM_TOTAL_AMOUNT = 10000000
+WEAK_TOTAL_AMOUNT = 100000000
+STRONG_TOTAL_AMOUNT = 200000000
 TG_WORKERS = 32
 TG_CONN_POOL = TG_WORKERS + 4
 

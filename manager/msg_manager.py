@@ -4,7 +4,8 @@ import csv
 
 from manager.db_manager import DbManager
 from utils.commons import get_current_time, read_message, convert_format, convert_to_str
-from utils.config import REVERSE_REASON_CODE, REVERSE_STOCK_TYPE_CODE
+from utils.config import REVERSE_REASON_CODE, REVERSE_STOCK_TYPE_CODE, MINIMUM_TOTAL_AMOUNT, WEAK_TOTAL_AMOUNT, STRONG_TOTAL_AMOUNT
+
 
 class MsgManager:
     def __init__(self):
@@ -22,11 +23,12 @@ class MsgManager:
             return r'굿이브닝\!'
         
     def __get_signal(self, amount):
-        if amount <= 50000000:
-            return '❗️'
-        if amount <= 100000000:
-            return '‼️'
-        return '🔥'
+        action = 'BUY' if amount >= 0 else 'SELL'
+        if abs(amount) <= WEAK_TOTAL_AMOUNT:
+            return f'❗_*{action}*_❗'
+        if abs(amount) <= STRONG_TOTAL_AMOUNT:
+            return f'️‼️_*{action}*_‼️'
+        return f'🔥_*{action}*_🔥'
 
     def __get_corp_frequency(self):
         corp_frequency = {}
@@ -55,11 +57,12 @@ class MsgManager:
         
         corp_infos, industry_corp_map = {}, defaultdict(set)
         for rcept in groupby_rcept.values():
-            total_amount = abs(sum([r['delta_volume'] * r['unit_price'] for r in rcept]))
-            if total_amount < 10000000:
+            total_amount = sum([r['delta_volume'] * r['unit_price'] for r in rcept])
+            if abs(total_amount) < MINIMUM_TOTAL_AMOUNT:
                 continue
 
             corp_code, corp_name, industry_name = rcept[0]['corp_code'], rcept[0]['corp_name'], rcept[0]['industry_name']
+            # market, market_rank = rcept[0]['market'], rcept[0]['market_rank']
             industry_corp_map[industry_name].add(corp_code)
 
             if corp_code not in corp_infos:
@@ -70,8 +73,9 @@ class MsgManager:
                 }
             else:
                 corp_infos[corp_code]['count'] += 1
-                corp_infos[corp_code]['max_total_amount'] = max(corp_infos[corp_code]['max_total_amount'], total_amount)
-        
+                if abs(total_amount) >= abs(corp_infos[corp_code]['max_total_amount']):
+                    corp_infos[corp_code]['max_total_amount'] = total_amount
+
         message, corp_frequency = '', self.__get_corp_frequency()
         for industry_name in [d['industry_name'] for d in self.db_manager.get_industry_list()]:
             corporates = industry_corp_map.get(industry_name)
@@ -82,7 +86,7 @@ class MsgManager:
             for corp in corporates:
                 info = corp_infos.get(corp)
                 message += f'• {info["corp_name"]}\({info["count"]}건\) {self.__get_signal(info["max_total_amount"])}\n'
-                message += f'\# 최근\_일주일\_{corp_frequency.get(corp)}번\_등장\n' if corp_frequency.get(corp) >= 3 and is_daily else ''
+                message += f'\# 최근\_일주일\_{corp_frequency.get(corp)}번\_등장\n' if corp_frequency.get(corp, 0) >= 3 and is_daily else ''
             message += '\n'
 
         return message
@@ -132,7 +136,9 @@ class MsgManager:
         data = self.db_manager.get_tg_detail_data(corp_name, target_date)
 
         target_date = convert_format(target_date, '%Y%m%d', '%Y\/%m\/%d')
-        message = f'📈 {target_date} __*{corp_name}*__ 변동 내역\n\n'
+        corp_detail_url = f'https://ko.m.wikipedia.org/wiki/{corp_name}'
+
+        message = f'📈 {target_date} __*[{corp_name}]({corp_detail_url})*__ 변동 내역\n\n'
         message += self.__get_corp_detail(corp_name)
         message += self.__get_message_body(data, 'executive_name')
         message += '\n\n특정 회사의 상세 스눕이 궁금하면 👉 /d\n특정 회사의 최근 스눕이 궁금하면 👉 /c\n특정 임원의 최근 스눕이 궁금하면 👉 /e'
