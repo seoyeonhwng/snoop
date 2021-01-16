@@ -27,7 +27,7 @@ class MsgManager:
         if abs(amount) <= WEAK_TOTAL_AMOUNT:
             return f'❗_*{action}*_❗'
         if abs(amount) <= STRONG_TOTAL_AMOUNT:
-            return f'️‼️_*{action}*_‼️'
+            return f'‼️_*{action}*_‼️'
         return f'🔥_*{action}*_🔥'
 
     def __get_corp_frequency(self):
