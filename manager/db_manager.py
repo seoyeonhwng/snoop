@@ -2,6 +2,7 @@ import pymysql.cursors
 
 from manager.log_manager import LogManager
 from utils.config import HOST, USER, PASSWORD, DB, PORT, CHARSET
+from utils.commons import get_current_time
 
 
 class DbManager:
@@ -176,12 +177,13 @@ class DbManager:
         query = query.format(corp_name=corp_name, executive_name=executive_name, count=count)
         return self.__execute(query)
 
-    def get_last_business_date(self, delta=1):
+    def get_last_business_date(self, end_date=get_current_time('%Y%m%d'), delta=1):
         query = "SELECT DISTINCT business_date FROM ticker " \
+                "WHERE business_date <= '{end_date}' " \
                 "ORDER BY business_date DESC " \
                 "LIMIT {delta}"
-        query = query.format(delta=delta)
-        return self.__execute(query)[0].get('business_date')
+        query = query.format(end_date=end_date, delta=delta)
+        return self.__execute(query)[-1].get('business_date')
 
     def get_highest_price(self, last_business_date):
         query = "SELECT MAX((high * 1)) AS highest_price FROM ticker " \

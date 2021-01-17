@@ -80,7 +80,7 @@ class DataFactory:
         return _corporates
 
     def insert_corp_frequency(self, end_date):
-        start_date = self.db_manager.get_last_business_date(6)
+        start_date = self.db_manager.get_last_business_date(end_date, 6)
         data = self.db_manager.get_disclosure_data(start_date, end_date)
 
         groupby_rcept = defaultdict(list)

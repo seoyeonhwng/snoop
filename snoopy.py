@@ -33,7 +33,7 @@ class Snoopy:
         
         targets = self.db_manager.get_targets()
         targets = set([t.get('chat_id') for t in targets])
-        message = self.msg_manager.get_snoop_message(target_date, is_daily=True)
+        message = self.msg_manager.get_snoop_message(target_date)
 
         self.logger.info(f'{target_date}/{len(targets)} start')
         self.tg_manager.send_all_message(targets, message)
