@@ -1,10 +1,10 @@
 import threading
 from collections import defaultdict
-import csv
-import os
 
 from pykrx import stock
+
 from utils.commons import get_current_time
+from utils.config import MINIMUM_TOTAL_AMOUNT
 from manager.log_manager import LogManager
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
@@ -79,8 +79,8 @@ class DataFactory:
                 c['market_rank'] = tmp.get('market_rank')
         return _corporates
 
-    def calculate_corp_frequency(self, end_date):
-        start_date = get_current_time('%Y%m%d', -6)
+    def insert_corp_frequency(self, end_date):
+        start_date = self.db_manager.get_last_business_date(6)
         data = self.db_manager.get_disclosure_data(start_date, end_date)
 
         groupby_rcept = defaultdict(list)
@@ -90,19 +90,14 @@ class DataFactory:
         corp_frequency = defaultdict(set)
         for rcept in groupby_rcept.values():
             total_amount = abs(sum([r['delta_volume'] * r['unit_price'] for r in rcept]))
-            if total_amount < 10000000:
+            if total_amount < MINIMUM_TOTAL_AMOUNT:
                 continue
 
-            corp_code, disclosed_on = rcept[0]['corp_code'], rcept[0]['disclosed_on']
-            corp_frequency[corp_code].add(disclosed_on)
+            stock_code, disclosed_on = rcept[0]['stock_code'], rcept[0]['disclosed_on']
+            corp_frequency[stock_code].add(disclosed_on)
 
-        csv_data = [{'corp_code':k, 'count':len(v)} for k, v in corp_frequency.items()]
-        file_path = os.path.dirname(os.path.realpath(__file__)) + '/corp_frequency.csv'
-
-        with open(file_path, 'w') as file:
-            writer = csv.DictWriter(file, fieldnames=['corp_code', 'count'])
-            writer.writeheader()
-            writer.writerows(csv_data)
+        frequency_data = [{'business_date': end_date, 'period': 'W', 'stock_code': k, 'count': len(v), 'created_at': get_current_time()} for k, v in corp_frequency.items()]
+        self.db_manager.insert_bulk_row('frequency', frequency_data)
 
     def run(self):
         target_date = get_current_time('%Y%m%d')
@@ -123,7 +118,8 @@ class DataFactory:
         self.logger.info(f"{step2_msg}")
 
         # [step3] calculate the number of apperances by company (7days)
-        self.calculate_corp_frequency(target_date)
+        # TODO. pykrx 버그 고치면 현재 step4 다음으로 들어간다! (주말에 insert되는 무의미한 값을 없애기 위해서)
+        self.insert_corp_frequency(target_date)
         step3_msg = "[step3] calculate_corp_frequency"
         tg_msg += f"{step3_msg}\n"
         self.logger.info(f"{step3_msg}")

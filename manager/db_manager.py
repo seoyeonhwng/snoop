@@ -176,14 +176,20 @@ class DbManager:
         query = query.format(corp_name=corp_name, executive_name=executive_name, count=count)
         return self.__execute(query)
 
-    def get_last_business_date(self):
-        query = "select business_date from ticker " \
-                "order by business_date desc " \
-                "limit 1"
+    def get_last_business_date(self, delta=1):
+        query = "SELECT DISTINCT business_date FROM ticker " \
+                "ORDER BY business_date DESC " \
+                "LIMIT {delta}"
+        query = query.format(delta=delta)
         return self.__execute(query)[0].get('business_date')
 
     def get_highest_price(self, last_business_date):
-        query = "select max((high * 1)) as highest_price from ticker " \
-                "where business_date = '{last_business_date}'"
+        query = "SELECT MAX((high * 1)) AS highest_price FROM ticker " \
+                "WHERE business_date = '{last_business_date}'"
         query = query.format(last_business_date=last_business_date)
         return self.__execute(query)[0].get('highest_price')
+
+    def get_frequency_info(self, period, target_date):
+        query = "SELECT * FROM frequency WHERE period = '{period}' AND business_date = '{target_date}'"
+        query = query.format(period=period, target_date=target_date)
+        return self.__execute(query)

@@ -1,6 +1,4 @@
 from collections import defaultdict
-import os
-import csv
 
 from manager.db_manager import DbManager
 from utils.commons import get_current_time, read_message, convert_format, convert_to_str
@@ -31,14 +29,8 @@ class MsgManager:
         return f'🔥_*{action}*_🔥'
 
     def __get_corp_frequency(self):
-        corp_frequency = {}
-        file_path = os.path.dirname(os.path.realpath(__file__)) + '/../corp_frequency.csv'
-
-        with open(file_path, 'r') as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                corp_frequency[row['corp_code']] = int(row['count'])
-        return corp_frequency
+        frequency_info = self.db_manager.get_frequency_info('W', get_current_time('%Y%m%d', -1))
+        return {f.get('stock_code'): f.get('count') for f in frequency_info}
         
     def __get_snoop_header(self, target_date):
         target_date = convert_format(target_date, '%Y%m%d', '%Y-%m-%d').replace("-", "\/")
@@ -61,20 +53,20 @@ class MsgManager:
             if abs(total_amount) < MINIMUM_TOTAL_AMOUNT:
                 continue
 
-            corp_code, corp_name, industry_name = rcept[0]['corp_code'], rcept[0]['corp_name'], rcept[0]['industry_name']
+            stock_code, corp_name, industry_name = rcept[0]['stock_code'], rcept[0]['corp_name'], rcept[0]['industry_name']
             # market, market_rank = rcept[0]['market'], rcept[0]['market_rank']
-            industry_corp_map[industry_name].add(corp_code)
+            industry_corp_map[industry_name].add(stock_code)
 
-            if corp_code not in corp_infos:
-                corp_infos[corp_code] = {
+            if stock_code not in corp_infos:
+                corp_infos[stock_code] = {
                     'corp_name': corp_name.replace('-', '\-').replace('.', '\.'),
                     'count': 1,
                     'max_total_amount': total_amount
                 }
             else:
-                corp_infos[corp_code]['count'] += 1
-                if abs(total_amount) >= abs(corp_infos[corp_code]['max_total_amount']):
-                    corp_infos[corp_code]['max_total_amount'] = total_amount
+                corp_infos[stock_code]['count'] += 1
+                if abs(total_amount) >= abs(corp_infos[stock_code]['max_total_amount']):
+                    corp_infos[stock_code]['max_total_amount'] = total_amount
 
         message, corp_frequency = '', self.__get_corp_frequency()
         for industry_name in [d['industry_name'] for d in self.db_manager.get_industry_list()]:
@@ -86,7 +78,7 @@ class MsgManager:
             for corp in corporates:
                 info = corp_infos.get(corp)
                 message += f'• {info["corp_name"]}\({info["count"]}건\) {self.__get_signal(info["max_total_amount"])}\n'
-                message += f'\# 최근\_일주일\_{corp_frequency.get(corp)}번\_등장\n' if corp_frequency.get(corp, 0) >= 3 and is_daily else ''
+                message += f'      _\# 최근\_일주일\_{corp_frequency.get(corp)}번\_등장_\n' if corp_frequency.get(corp, 0) >= 3 and is_daily else ''
             message += '\n'
 
         return message
