@@ -8,7 +8,7 @@ from manager.db_manager import DbManager
 from manager.log_manager import LogManager
 from manager.tg_manager import TgManager
 from manager.msg_manager import MsgManager
-from utils.commons import get_current_time, read_message
+from utils.commons import get_current_time, read_message, convert_to_str
 
 MAX_NICKNAME_BYTE = 30
 # INVALID_USER_MSG = '💵🤲 \.\.\.'
@@ -378,6 +378,18 @@ class Commander:
             update=update
         )
 
+        time.sleep(3)
+        last_business_date = convert_to_str(self.db_manager.get_last_business_date(), '%Y%m%d')
+        tg_msg = self.msg_manager.get_snoop_message(last_business_date)
+        context.dispatcher.run_async(
+            self.__log_and_notify,
+            'tg_hi_snoop',
+            log_msg,
+            chat_id,
+            tg_msg,
+            update=update
+        )
+        
         # notice to admins
         tg_msg = f'[신규 회원 도착]\n{nickname}'
         threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
