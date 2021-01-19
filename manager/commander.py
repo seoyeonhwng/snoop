@@ -378,7 +378,7 @@ class Commander:
             update=update
         )
 
-        time.sleep(3)
+        time.sleep(2.5)
         last_business_date = convert_to_str(self.db_manager.get_last_business_date(), '%Y%m%d')
         tg_msg = self.msg_manager.get_snoop_message(last_business_date)
         context.dispatcher.run_async(
