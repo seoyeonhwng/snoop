@@ -57,11 +57,16 @@ class DataFactory:
         return corporate
 
     def get_ticker_info(self, _market, _target_date):
-        ticker_df = stock.get_market_ohlcv_by_ticker(_target_date, _market)
+        ohlcv_df = stock.get_market_ohlcv_by_ticker(_target_date, _market)
+        cap_df = stock.get_market_cap_by_ticker(_target_date, _market)
+
+        ticker_df = ohlcv_df.join(cap_df, rsuffix='_rights')
+        ticker_df = ticker_df.drop(['종가_rights', '거래량_rights', '거래대금_rights'], axis=1)
         ticker_df = ticker_df.rename({'종목명': 'corp_name', '시가': 'open', '고가': 'high', '저가': 'low', '종가': 'close',
                                       '거래량': 'volume', '거래대금': 'quote_volume', '시가총액': 'market_capitalization',
-                                      '시총비중': 'market_ratio', '상장주식수': 'operating_share'}, axis='columns')
+                                      '상장주식수': 'operating_share'}, axis='columns')
         tickers = ticker_df.sort_values(by='market_capitalization', ascending=False).to_dict('index').items()
+
         ticker_info = []
         for i, (k, v) in enumerate(tickers):
             ticker_info.append(self.get_empty_ticker(k, v, _market, _target_date, i+1))
@@ -117,18 +122,17 @@ class DataFactory:
         tg_msg += f"{step2_msg}\n"
         self.logger.info(f"{step2_msg}")
 
-        # [step3] calculate the number of apperances by company (7days)
-        # TODO. pykrx 버그 고치면 현재 step4 다음으로 들어간다! (주말에 insert되는 무의미한 값을 없애기 위해서)
-        self.insert_corp_frequency(target_date)
-        step3_msg = "[step3] calculate_corp_frequency"
-        tg_msg += f"{step3_msg}\n"
-        self.logger.info(f"{step3_msg}")
-
         tickers = stock.get_market_ticker_list(target_date)
         if not tickers:
             tg_msg += f"\n\n{target_date} Partially Loaded:)"
             threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
             return
+
+        # [step3] calculate the number of apperances by company (7days)
+        self.insert_corp_frequency(target_date)
+        step3_msg = "[step3] calculate_corp_frequency"
+        tg_msg += f"{step3_msg}\n"
+        self.logger.info(f"{step3_msg}")
 
         # [step4] bulk insert ticker
         markets = ["KOSPI", "KOSDAQ"]

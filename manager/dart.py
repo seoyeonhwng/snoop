@@ -106,7 +106,6 @@ class Dart:
             p = self.get_empty_data(_rcept_no, _rcept_dt, _stock_code, _executive_name)
 
             for text, text_type, c_name in zip(row_content, col_types, col_names):
-                print(text, text_type, c_name)
                 p[c_name] = self.convert_valid_format(text, text_type)
 
             p['reason_code'] = REASON_CODE.get(p['reason_code']) if REASON_CODE.get(p['reason_code']) else p[
@@ -115,7 +114,6 @@ class Dart:
                 'stock_type']
 
             if p['unit_price'] <= highest_price:  # unit_price parsing 문제로, 전일 최고가보다 낮은 기격의 공시만 인정한다.
-                print(f"{p['unit_price']} / {highest_price}")
                 stock_detail.append(p)
 
         return stock_detail
