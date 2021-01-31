@@ -195,3 +195,8 @@ class DbManager:
         query = "SELECT * FROM frequency WHERE period = '{period}' AND business_date = '{target_date}'"
         query = query.format(period=period, target_date=target_date)
         return self.__execute(query)
+
+    def get_ticker_info(self, stock_code, target_date):
+        query = "SELECT * FROM ticker WHERE stock_code = '{stock_code}' AND business_date = '{target_date}'"
+        query = query.format(stock_code=stock_code, target_date=target_date)
+        return self.__execute(query)[0]
