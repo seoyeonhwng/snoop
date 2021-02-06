@@ -4,7 +4,6 @@ import numpy as np
 from pandas import DataFrame
 
 from manager.log_manager import LogManager
-from manager.db_manager import DbManager
 from utils.commons import get_current_time
 
 BASE_URL = 'http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd'
@@ -13,7 +12,6 @@ BASE_URL = 'http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd'
 class Krx:
     def __init__(self):
         self.logger = LogManager().logger
-        self.db_manager = DbManager()
 
     def get_empty_ticker(self, k, v, _market, _target_date, _market_rank):
         ticker = {
