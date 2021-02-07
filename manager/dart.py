@@ -123,6 +123,8 @@ class Dart:
         for i, d in enumerate(data):
             dcm_no = self.get_dcm_no(d.get('rcept_no'))
             self.logger.info(f"parsing: {d.get('rcept_no')} -> {i + 1} / {len(data)}")
+            if d.get('flr_nm') == '국민연금공단':  # 공단 일괄 공시하여... 삭제한다. 20210207
+                continue
             stock_diff[d.get('rcept_no')] = self.get_stock_detail(d.get('rcept_no'), dcm_no,
                                                                   d.get('rcept_dt'), d.get('stock_code'), d.get('flr_nm'))
 
