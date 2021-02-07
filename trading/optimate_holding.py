@@ -91,7 +91,7 @@ class A:
 
             # 위에서 저장한 발생 시점으로부터 끝까지
             for target in target_date_list:
-                if target >= added_date:
+                if target > added_date:
                     company_name = [c.get('name') for c in total_company if c.get('stock_code') == stock_code][0]
                     print(stock_code, company_name, target)
                     ticker = self.db_manager.get_ticker_info(stock_code, target)
