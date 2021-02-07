@@ -200,3 +200,7 @@ class DbManager:
         query = "SELECT * FROM ticker WHERE stock_code = '{stock_code}' AND business_date = '{target_date}'"
         query = query.format(stock_code=stock_code, target_date=target_date)
         return self.__execute(query)[0]
+
+    def get_total_company(self):
+        query = "SELECT * FROM company"
+        return self.__execute(query)

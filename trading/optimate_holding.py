@@ -36,6 +36,9 @@ class A:
             }
         :return:
         """
+        final_list = []
+        total_company = self.db_manager.get_total_company()
+
         total_expected = defaultdict(list)
         result = defaultdict(int)
 
@@ -48,7 +51,6 @@ class A:
                 continue
             target_date_list.append(business_date)
         target_date_list = sorted(set(target_date_list))
-
 
         stock_infos = []  # 해당 날짜에 불꽃 BUY라면 대상 회사 리스트에 넣고
         for target_date in target_date_list:
@@ -90,7 +92,8 @@ class A:
             # 위에서 저장한 발생 시점으로부터 끝까지
             for target in target_date_list:
                 if target >= added_date:
-                    #print(stock_code, target)
+                    company_name = [c.get('name') for c in total_company if c.get('stock_code') == stock_code][0]
+                    print(stock_code, company_name, target)
                     ticker = self.db_manager.get_ticker_info(stock_code, target)
                     o, c = ticker.get('open'), ticker.get('close')
                     if int(o) == 0 or int(c) == 0:
@@ -107,12 +110,14 @@ class A:
                         expected = {'i': init_i, 'd': target, 'init_o': init_o, 'latest_c': c, 't': t, 'a': a}
                         total_expected[fire].append(expected)
                     else:  # 최초 등장하는 회사라면
+                        init_target = target
                         t = a = calculate_term(o, c)
 
                         expected = {'i': target, 'd': target, 'init_o': o, 'latest_c': c, 't': t, 'a': a}
                         total_expected[fire] = [expected]
 
-                    if total_expected.get(fire)[-1].get('a') > MINIMUM_PROFIT:
+                    if total_expected.get(fire)[-1].get('a') >= MINIMUM_PROFIT:
+                        final_list.append({'stock_code': stock_code, 'company_name': company_name, 'init_target': init_target, 'target': target})
                         print(f" =======> {fire} / {len(total_expected.get(fire))} / {total_expected.get(fire)[-1].get('a')}")
                         result[len(total_expected.get(fire))] += 1
                         break
@@ -121,6 +126,7 @@ class A:
 
         # print(total_expected)
         print('================================')
+        print(final_list)
         print(result)
         print(len(stock_infos))  # 전체 불
         return
