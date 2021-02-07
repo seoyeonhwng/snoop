@@ -180,7 +180,6 @@ class Dart:
 
         if response['status'] == '013':
             self.logger.info(NO_DATA_MSG)
-            threading.Thread(target=self.tg_manager.send_warning_message, args=(NO_DATA_MSG,)).start()
             return
 
         data, total_page = response['list'], response['total_page']

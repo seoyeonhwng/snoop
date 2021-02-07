@@ -4,6 +4,5 @@ PyMySQL
 beautifulsoup4
 lxml
 pandas
-pykrx
 flask
 numpy

@@ -1,8 +1,6 @@
 import threading
 from collections import defaultdict
 
-from pykrx import stock
-
 from utils.commons import get_current_time
 from utils.config import MINIMUM_TOTAL_AMOUNT
 from manager.log_manager import LogManager
@@ -10,6 +8,7 @@ from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
 from manager.dart import Dart
 from manager.naver import Naver
+from manager.krx import Krx
 
 NO_DATA_MSG = "{target_date}에는 거래내역 없습니다."
 
@@ -21,25 +20,7 @@ class DataFactory:
         self.tg_manager = TgManager()
         self.dart = Dart()
         self.naver = Naver()
-
-    def get_empty_ticker(self, k, v, _market, _target_date, _market_rank):
-        ticker = {
-            'stock_code': k,
-            'business_date': _target_date,
-            'open': v.get('open'),
-            'high': v.get('high'),
-            'low': v.get('low'),
-            'close': v.get('close'),
-            'volume': v.get('volume'),
-            'quote_volume': v.get('quote_volume'),
-            'market_capitalization': v.get('market_capitalization'),
-            'market': _market,
-            'market_rank': _market_rank,
-            'market_ratio': v.get('market_ratio'),
-            'operating_share': v.get('operating_share'),
-            'created_at': get_current_time(),
-        }
-        return ticker
+        self.krx = Krx()
 
     def get_empty_corporate(self):
         corporate = {
@@ -55,22 +36,6 @@ class DataFactory:
             'updated_at': get_current_time()
         }
         return corporate
-
-    def get_ticker_info(self, _market, _target_date):
-        ohlcv_df = stock.get_market_ohlcv_by_ticker(_target_date, _market)
-        cap_df = stock.get_market_cap_by_ticker(_target_date, _market)
-
-        ticker_df = ohlcv_df.join(cap_df, rsuffix='_rights')
-        ticker_df = ticker_df.drop(['종가_rights', '거래량_rights', '거래대금_rights'], axis=1)
-        ticker_df = ticker_df.rename({'종목명': 'corp_name', '시가': 'open', '고가': 'high', '저가': 'low', '종가': 'close',
-                                      '거래량': 'volume', '거래대금': 'quote_volume', '시가총액': 'market_capitalization',
-                                      '상장주식수': 'operating_share'}, axis='columns')
-        tickers = ticker_df.sort_values(by='market_capitalization', ascending=False).to_dict('index').items()
-
-        ticker_info = []
-        for i, (k, v) in enumerate(tickers):
-            ticker_info.append(self.get_empty_ticker(k, v, _market, _target_date, i+1))
-        return ticker_info
 
     def fill_ticker_corporate(self, _corporates, _target_date):
         ticker = {d.get('stock_code'): d for d in self.db_manager.select_ticker_info(_target_date)}
@@ -122,7 +87,7 @@ class DataFactory:
         tg_msg += f"{step2_msg}\n"
         self.logger.info(f"{step2_msg}")
 
-        tickers = stock.get_market_ticker_list(target_date)
+        tickers = self.krx.get_ticker_info(target_date)  # check if market opened
         if not tickers:
             tg_msg += f"\n\n{target_date} Partially Loaded:)"
             threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
@@ -137,7 +102,7 @@ class DataFactory:
         # [step4] bulk insert ticker
         markets = ["KOSPI", "KOSDAQ"]
         for market in markets:
-            tickers = self.get_ticker_info(market, target_date)
+            tickers = self.krx.get_ticker_info(target_date, market)
             if not self.db_manager.insert_bulk_row('ticker', tickers):
                 return
         step4_msg = "[step4] bulk insert ticker"

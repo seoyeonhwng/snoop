@@ -32,7 +32,7 @@ class Krx:
         }
         return ticker
 
-    def get_ticker_info(self, _market, _target_date):
+    def get_ticker_info(self, _target_date, _market='KOSPI'):
         krx_market = {'KOSPI': 'STK', 'KOSDAQ': 'KSQ'}
         p = {
             'bld': 'dbms/MDC/STAT/standard/MDCSTAT01501',
@@ -48,6 +48,8 @@ class Krx:
         df = DataFrame(json.loads(resp.text).get('OutBlock_1'))
         df = df[['MKT_NM', 'ISU_ABBRV', 'ISU_SRT_CD', 'TDD_OPNPRC', 'TDD_HGPRC', 'TDD_LWPRC', 'TDD_CLSPRC', 'ACC_TRDVOL', 'ACC_TRDVAL', 'MKTCAP', 'LIST_SHRS']]
         df.columns = ['market', 'corp_name', 'stock_code', 'open', 'high', 'low', 'close', 'volume', 'quote_volume', 'market_capitalization', 'operating_share']
+        if df.iloc[0]['open'] == '-':  # 휴일에는 - 반환하므로 return
+            return
         df = df.replace('[^-\w\.]', '', regex=True)
         df = df.replace('\-$', '0', regex=True)
         df = df.replace('', '0')
@@ -55,9 +57,9 @@ class Krx:
         df = df.astype({
             'open': np.int64, 'high': np.int64, 'low': np.int64, 'close': np.int64, 'volume': np.int64,
             'quote_volume': np.int64, 'market_capitalization': np.int64, 'operating_share': np.int64})
-        df = df.sort_values(by='market_capitalization', ascending=False).to_dict('index').items()
+        tickers = df.sort_values(by='market_capitalization', ascending=False).to_dict('index').items()
 
         ticker_info = []
-        for i, (k, v) in enumerate(df):
+        for i, (k, v) in enumerate(tickers):
             ticker_info.append(self.get_empty_ticker(k, v, _market, _target_date, i + 1))
         return ticker_info
