@@ -109,7 +109,7 @@ class MsgManager:
             message += f'👉 [{title}]({report_url})\n'
 
             for v in values:
-                traded_on = convert_to_str(v['traded_on'], '%m/%d').replace('/', '\/')
+                traded_on = convert_to_str(v['traded_on'], '%y/%m/%d').replace('/', '\/')
                 reason_code = REVERSE_REASON_CODE.get(v['reason_code'])
                 stock_type = REVERSE_STOCK_TYPE_CODE.get(v['stock_type'])
                 delta = f'▲{v["delta_volume"]:,}' if v["delta_volume"] > 0 else f'▼{-v["delta_volume"]:,}'
