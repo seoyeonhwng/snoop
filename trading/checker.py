@@ -3,6 +3,8 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
+import threading
+
 from manager.log_manager import LogManager
 from manager.db_manager import DbManager
 from manager.tg_manager import TgManager
@@ -37,7 +39,7 @@ class Checker:
             self.logger.info('(checker)current no holding')
         else:
             sell_target = []
-            today = get_current_time('%Y%m%d', -2)
+            today = get_current_time('%Y%m%d', -2)  # TODO. change date
             ticker = self.krx.get_ticker_info(today)
             if not ticker:
                 self.logger.info(f"(checker)check expected ratio: no ticker")
@@ -57,10 +59,10 @@ class Checker:
                     sell_target.append({'buy_date': h.get('buy_date'), 'corp_name': corp_name, 'profit_ratio': str(expected)})
 
             if sell_target:
-                msg = f'[need to SELL]\n'
+                tg_msg = f'[need to SELL]\n'
                 for t in sell_target:
-                    msg += f"{convert_to_str(t.get('buy_date'), '%Y%m%d')} / {t.get('corp_name')} / {t.get('profit_ratio')}%\n"
-                self.tg_manager.send_warning_message(msg)
+                    tg_msg += f"{convert_to_str(t.get('buy_date'), '%Y%m%d')} / {t.get('corp_name')} / {t.get('profit_ratio')}%\n"
+                threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
 
 
 if __name__ == "__main__":
