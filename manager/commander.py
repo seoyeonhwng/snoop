@@ -10,6 +10,7 @@ from manager.tg_manager import TgManager
 from manager.msg_manager import MsgManager
 from utils.commons import get_current_time, read_message, convert_to_str
 from utils.config import ADMIN_IDS
+from trading.checker import get_profit_ratio
 
 MAX_NICKNAME_BYTE = 30
 # INVALID_USER_MSG = '💵🤲 \.\.\.'
@@ -526,13 +527,24 @@ class Commander:
             tg_msg = '해당 종목 존재 안함!!!'
             threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
             return
-         
-        # TODO 수익률 새로 계산해서 넣기!
+        stock_code = stock_code[0]['stock_code']
+        
+        trading_data = self.db_manager.get_trading_data(stock_code, buy_date)
+        if not trading_data:
+            tg_msg = '해당 매매 존재 안함!!!'
+            threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
+            return
+        
+        last_price = trading_data[0]['last_price'] if trading_data[0]['last_price'] else trading_data[0]['buy_price']
+        profit_ratio = get_profit_ratio(sell_price, last_price, trading_data[0].get('profit_ratio', None))
+        
         params = {
-            'stock_code': stock_code[0]['stock_code'],
+            'stock_code': stock_code,
             'buy_date': buy_date,
             'sell_price': sell_price,
             'sell_date': get_current_time(),
+            'last_price': last_price,
+            'profit_ratio': profit_ratio,
             'last_updated_at': get_current_time()
         }
         result = self.db_manager.update_trading_data(params)

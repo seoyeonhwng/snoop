@@ -214,8 +214,20 @@ class DbManager:
         query = query.format(corp_name=corp_name)
         return self.__execute(query)
 
+    def get_trading_data(self, stock_code, buy_date):
+        query = "SELECT * FROM dtnn.trading WHERE dtnn.trading.stock_code = '{stock_code}' AND DATE_FORMAT(dtnn.trading.buy_date, '%Y%m%d') = '{buy_date}'"
+        query = query.format(stock_code=stock_code, buy_date=buy_date)
+        return self.__execute(query)
+
     def update_trading_data(self, params):
         query = "UPDATE dtnn.trading SET dtnn.trading.sell_price = '{sell_price}', dtnn.trading.sell_date = '{sell_date}', " \
+                "dtnn.trading.last_price = '{last_price}', dtnn.trading.profit_ratio = '{profit_ratio}', dtnn.trading.last_updated_at = '{last_updated_at}' " \
+                "WHERE dtnn.trading.stock_code = '{stock_code}' AND DATE_FORMAT(dtnn.trading.buy_date, '%Y%m%d') = '{buy_date}'"
+        query = query.format(**params)
+        return self.__execute_commit(query)
+    
+    def update_trading_closer(self, params):
+        query = "UPDATE dtnn.trading SET dtnn.trading.last_price = '{last_price}', dtnn.trading.profit_ratio = '{profit_ratio}', " \
                 "dtnn.trading.last_updated_at = '{last_updated_at}' " \
                 "WHERE dtnn.trading.stock_code = '{stock_code}' AND DATE_FORMAT(dtnn.trading.buy_date, '%Y%m%d') = '{buy_date}'"
         query = query.format(**params)
