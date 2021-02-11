@@ -26,21 +26,20 @@ class Krx:
             'market_capitalization': v.get('market_capitalization'),
             'market': _market,
             'market_rank': _market_rank,
-            'market_ratio': v.get('market_ratio'),  # TODO. None이고 실제로 우리 안 쓰면 컬럼도 뺄까?
+            'market_ratio': v.get('market_ratio'),
             'operating_share': v.get('operating_share'),
             'created_at': get_current_time(),
         }
         return ticker
 
-    def get_ticker_info(self, _target_date, _market='KOSPI'):
-        krx_market = {'KOSPI': 'STK', 'KOSDAQ': 'KSQ'}
+    def get_ticker_info(self, _target_date, _market='ALL'):
+        krx_market = {'KOSPI': 'STK', 'KOSDAQ': 'KSQ', 'ALL': 'ALL'}
         p = {
             'bld': 'dbms/MDC/STAT/standard/MDCSTAT01501',
             'mktId': krx_market.get(_market),
             'trdDd': _target_date
         }
         resp = requests.post(BASE_URL, headers={"User-Agent": "Mozilla/5.0"}, data=p)
-
         if resp.status_code != 200:
             self.logger.critical(f'[ERROR] status code != 200 in get_ticker_info {_market}')
             return

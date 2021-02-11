@@ -8,10 +8,8 @@ import datetime
 
 from manager.db_manager import DbManager
 from utils.commons import convert_to_str
-from utils.config import MINIMUM_TOTAL_AMOUNT, STRONG_TOTAL_AMOUNT
+from utils.config import MINIMUM_TOTAL_AMOUNT, STRONG_TOTAL_AMOUNT, MAX_BUSINESS_DATE, MINIMUM_PROFIT
 
-MAX_BUSINESS_DATE = 900
-MINIMUM_PROFIT = 10.0
 
 EXCEPT_CORP = ['005880', '002070', '000100', '003460', '004150', '123010', '043290', '221610', '073570', '096690', '044380', '214310', '087730', '054780', '101400', '017650', '290650', '042520']
 
@@ -37,7 +35,7 @@ class A:
         :return:
         """
         final_list = []
-        total_company = self.db_manager.get_total_company()
+        total_company = self.db_manager.get_total_corporates()
 
         total_expected = defaultdict(list)
         result = defaultdict(int)
