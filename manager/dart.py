@@ -200,9 +200,10 @@ class Dart:
         parsed = self.parsing(executive_data)
 
         for rcept, detail in parsed.items():
-            stock_detail = []
-            for d in detail:
-                stock_detail.append(d)
+            stock_detail = [d for d in detail]
+            if not stock_detail:
+                continue
+
             self.logger.debug(f"DB insert on {rcept}")
             if not self.db_manager.insert_bulk_row('executive', stock_detail):  # 공시번호 단위 bulk insert
                 self.logger.info(f'[ERROR] insert_bulk_row in executive - {rcept}')

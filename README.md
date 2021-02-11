@@ -12,7 +12,6 @@
 ## 메시지 예시
 <img src="https://user-images.githubusercontent.com/49056225/106089718-e2d5f600-616b-11eb-8af8-542600bbc503.png" width="24%" height="24%"> <img src="https://user-images.githubusercontent.com/49056225/106090517-af946680-616d-11eb-8019-e1678d14fc35.png" width="24%" height="24%"> <img src="https://user-images.githubusercontent.com/49056225/106089858-30eaf980-616c-11eb-89ca-85276ca29315.png" width="24%" height="24%"> <img src="https://user-images.githubusercontent.com/49056225/106089891-43fdc980-616c-11eb-9262-c0bc55d759aa.png" width="24%" height="24%">
 
+👇자세한 내용은 아래 스눕 소개 링크를 클릭해주세요👇
 
-👇 텔레그램 설치 후 아래 링크를 클릭을 해주세요👇
-
-https://t.me/snoopHwangBot
+https://tinyurl.com/4avc5fy3
