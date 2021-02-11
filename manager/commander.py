@@ -9,6 +9,7 @@ from manager.log_manager import LogManager
 from manager.tg_manager import TgManager
 from manager.msg_manager import MsgManager
 from utils.commons import get_current_time, read_message, convert_to_str
+from utils.config import ADMIN_IDS
 
 MAX_NICKNAME_BYTE = 30
 # INVALID_USER_MSG = '💵🤲 \.\.\.'
@@ -493,3 +494,47 @@ class Commander:
             tg_msg,
             update=update
         )
+
+    def tg_buy(self, update, context):
+        if str(update.message.chat_id) not in ADMIN_IDS:
+            return
+
+        corp_name, buy_price = context.args
+        stock_code = self.db_manager.get_stock_code(corp_name)
+        if not stock_code:
+            tg_msg = '해당 종목 존재 안함!!!'
+            threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
+            return
+
+        data = {
+            'stock_code': stock_code[0]['stock_code'],
+            'buy_date': get_current_time(),
+            'buy_price': buy_price,
+            'last_updated_at': get_current_time()
+        }
+        result = self.db_manager.insert_row('trading', data)
+        tg_msg = f'[/buy {corp_name}] DB insert 성공' if result else f'[/buy {corp_name}] DB insert 실패'
+        threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
+        
+    def tg_sell(self, update, context):
+        if str(update.message.chat_id) not in ADMIN_IDS:
+            return
+        
+        buy_date, corp_name, sell_price = context.args
+        stock_code = self.db_manager.get_stock_code(corp_name)
+        if not stock_code:
+            tg_msg = '해당 종목 존재 안함!!!'
+            threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
+            return
+         
+        # TODO 수익률 새로 계산해서 넣기!
+        params = {
+            'stock_code': stock_code[0]['stock_code'],
+            'buy_date': buy_date,
+            'sell_price': sell_price,
+            'sell_date': get_current_time(),
+            'last_updated_at': get_current_time()
+        }
+        result = self.db_manager.update_trading_data(params)
+        tg_msg = f'[/sell {corp_name}] DB insert 성공' if result else f'[/sell {corp_name}] DB insert 실패'
+        threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()

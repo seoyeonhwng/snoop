@@ -201,6 +201,22 @@ class DbManager:
         query = query.format(stock_code=stock_code, target_date=target_date)
         return self.__execute(query)[0]
 
-    def get_total_company(self):
-        query = "SELECT * FROM company"
+    def get_total_corporates(self):
+        query = "SELECT * FROM corporate"
         return self.__execute(query)
+
+    def get_holding_trades(self):
+        query = "SELECT * FROM trading WHERE sell_date IS NULL"
+        return self.__execute(query)
+
+    def get_stock_code(self, corp_name):
+        query = "SELECT dtnn.corporate.stock_code FROM dtnn.corporate WHERE dtnn.corporate.corp_name = '{corp_name}'"
+        query = query.format(corp_name=corp_name)
+        return self.__execute(query)
+
+    def update_trading_data(self, params):
+        query = "UPDATE dtnn.trading SET dtnn.trading.sell_price = '{sell_price}', dtnn.trading.sell_date = '{sell_date}', " \
+                "dtnn.trading.last_updated_at = '{last_updated_at}' " \
+                "WHERE dtnn.trading.stock_code = '{stock_code}' AND DATE_FORMAT(dtnn.trading.buy_date, '%Y%m%d') = '{buy_date}'"
+        query = query.format(**params)
+        return self.__execute_commit(query)
