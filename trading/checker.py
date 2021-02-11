@@ -13,11 +13,15 @@ from utils.config import MINIMUM_PROFIT
 
 
 def get_term_ratio(open, close):
-    return round((float(close) - float(open))/float(open)*100, 3)
+    return round((float(close) - float(open)) / float(open) * 100, 3)
 
 
-def get_profit_ratio(before, after):
-    return round(((1+float(before)/100)*(1+float(after)/100)-1)*100, 3)
+def get_profit_ratio(sell_price, last_price, profit_ratio):
+    term_ratio = get_term_ratio(last_price, sell_price)
+    if not profit_ratio:
+        return term_ratio
+    else:
+        return round(((1 + float(profit_ratio) / 100) * (1 + float(term_ratio) / 100) - 1) * 100, 3)
 
 
 class Checker:
@@ -45,11 +49,7 @@ class Checker:
                 current_price = [t.get('close') for t in ticker if t.get('stock_code') == h.get('stock_code')][0]
                 last_price = h.get('buy_price') if not h.get('last_price') else h.get('last_price')  # 오늘 산 경우 고려
 
-                term_ratio = get_term_ratio(last_price, current_price)
-                if not h.get('profit_ratio'):  # 오늘 산 경우 고려
-                    expected = term_ratio
-                else:
-                    expected = get_profit_ratio(h.get('profit_ratio'), term_ratio)
+                expected = get_profit_ratio(current_price, last_price, h.get('profit_ratio'))
 
                 self.logger.info(f"(checker)check expected ratio {h.get('buy_date')} / {corp_name} / {last_price} / {current_price} / {str(expected)}")
 
