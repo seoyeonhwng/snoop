@@ -39,7 +39,7 @@ class Checker:
             self.logger.info('(checker)current no holding')
         else:
             sell_target = []
-            today = get_current_time('%Y%m%d', -2)  # TODO. change date
+            today = get_current_time('%Y%m%d', -3)  # TODO. change date
             ticker = self.krx.get_ticker_info(today)
             if not ticker:
                 self.logger.info(f"(checker)check expected ratio: no ticker")
