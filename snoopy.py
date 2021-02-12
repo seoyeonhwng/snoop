@@ -98,7 +98,7 @@ if __name__ == "__main__":
     if command == 'run':
         mp.set_start_method("fork")
         mp.Process(target=s.run, args=()).start()
-        mp.Process(target=s.watchdog, args=()).start()
+        # mp.Process(target=s.watchdog, args=()).start()
     elif command == 'send':
         date = sys.argv[2] if len(sys.argv) >= 3 else None
         s.send_daily_notice(date)
