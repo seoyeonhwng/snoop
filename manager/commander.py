@@ -550,3 +550,43 @@ class Commander:
         result = self.db_manager.update_trading_data(params)
         tg_msg = f'[/sell {corp_name}] DB insert 성공' if result else f'[/sell {corp_name}] DB insert 실패'
         threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
+
+    def tg_notice(self, update, context):
+        if str(update.message.chat_id) not in ADMIN_IDS:
+            return
+
+        chat_id = update.effective_chat.id
+        log_msg = f'{chat_id}|{context.args}'
+
+        # check input condition
+        tg_msg = read_message('n_guide.txt')
+        if len(context.args) < 2 or context.args[0] not in ['dev', 'prd']:
+            context.dispatcher.run_async(
+                self.__log_and_notify,
+                'tg_notice',
+                log_msg,
+                chat_id,
+                tg_msg,
+                update=update
+            )
+            return
+
+        send_type = context.args[0]
+        content = ' '.join(context.args[1:])
+        if len(content.split('n')) > 1:
+            content = '\n'.join(content.split('n'))
+
+        if send_type == 'dev':  # admin
+            threading.Thread(target=self.tg_manager.send_all_message, args=(ADMIN_IDS, content,)).start()
+        else:  # whole member
+            targets = self.db_manager.get_targets()
+            threading.Thread(target=self.tg_manager.send_all_message, args=(targets, content,)).start()
+
+    # TODO.
+    def tg_mail(self, update, context):
+        # 회원정보 받고
+        # 메일 주소 받고
+        # 메일 형식 체크 한번 하고
+        # 업데이트 하고
+        # 성공등록 완료!
+        return

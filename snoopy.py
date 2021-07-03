@@ -56,6 +56,9 @@ class Snoopy:
         feedback_handler = CommandHandler(['feedback', 'f'], self.commander.tg_feedback, pass_args=True, run_async=False)
         buy_handler = CommandHandler('buy', self.commander.tg_buy, pass_args=True, run_async=False)
         sell_handler = CommandHandler('sell', self.commander.tg_sell, pass_args=True, run_async=False)
+        notice_handler = CommandHandler('notice', self.commander.tg_notice, pass_args=True, run_async=False)
+        # TODO
+        mail_handler = CommandHandler('mail', self.commander.tg_mail, pass_args=True, run_async=False)
 
         error_handler = MessageHandler(Filters.text | Filters.command, self.commander.tg_command, run_async=False)
 
@@ -70,6 +73,7 @@ class Snoopy:
         dispatcher.add_handler(feedback_handler)
         dispatcher.add_handler(buy_handler)
         dispatcher.add_handler(sell_handler)
+        dispatcher.add_handler(notice_handler)
 
         dispatcher.add_handler(error_handler)
 
