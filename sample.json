@@ -5,6 +5,10 @@
   "watchdog_bot_token": "",
   "warning_bot_token": "",
   "admin_ids": [],
+  "mail": {
+    "id": "",
+    "pwd": ""
+  },
   "mysql": {
       "host": "",
       "user": "",
