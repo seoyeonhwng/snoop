@@ -8,9 +8,11 @@ from manager.log_manager import LogManager
 from manager.db_manager import DbManager
 from manager.api_manager import ApiManager
 from manager.tg_manager import TgManager
+from manager.mail_manager import MailManager
 from manager.msg_manager import MsgManager
 from manager.commander import Commander
 from utils.commons import get_current_time
+from utils.commons import convert_format
 from utils.config import BOT_TOKEN
 from utils.config import MODE
 from utils.config import TG_WORKERS
@@ -25,19 +27,28 @@ class Snoopy:
         self.db_manager = DbManager()
         self.api_manager = ApiManager()
         self.tg_manager = TgManager()
+        self.mail_manager = MailManager()
         self.msg_manager = MsgManager()
         self.commander = Commander()
 
     def send_daily_notice(self, target_date):
         target_date = get_current_time('%Y%m%d', -1) if not target_date else target_date
-        
-        targets = self.db_manager.get_targets()
-        targets = set([t.get('chat_id') for t in targets])
         message = self.msg_manager.get_snoop_message(target_date)
 
-        self.logger.info(f'{target_date}/{len(targets)} start')
-        self.tg_manager.send_all_message(targets, message)
-        self.logger.info(f'{target_date}/{len(targets)} end')
+        tg_targets = self.db_manager.get_targets()
+        tg_targets = set([t.get('chat_id') for t in tg_targets])
+        self.logger.info(f'{target_date}/{len(tg_targets)} tg start')
+        self.tg_manager.send_all_message(tg_targets, message)
+        self.logger.info(f'{target_date}/{len(tg_targets)} tg end')
+
+        mail_title = f'[SNOOP] {convert_format(target_date, "%Y%m%d", "%Y/%m/%d")} 레포트'
+        mail_targets = list()
+        mail_targets.append({'mail': 'hjh@kia.com'})
+        mail_targets.append({'mail': 'neosouler@gmail.com'})
+        mail_targets.append({'mail': 'seoyoniee22@gmail.com'})
+        self.logger.info(f'{target_date}/{len(mail_targets)} mail start')
+        self.mail_manager.send_mail(mail_targets, mail_title, message)
+        self.logger.info(f'{target_date}/{len(mail_targets)} mail end')
 
     def run(self):
         self.logger.info('Snoop Bot Started')
