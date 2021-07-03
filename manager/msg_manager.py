@@ -8,6 +8,24 @@ from utils.config import REVERSE_REASON_CODE, REVERSE_STOCK_TYPE_CODE, MINIMUM_T
 class MsgManager:
     def __init__(self):
         self.db_manager = DbManager()
+
+    def __get_animal(self):
+        current_year = int(get_current_time('%Y'))
+        animal_map = {
+            '0': f'🐭',
+            '1': f'🐮',
+            '2': f'🐯',
+            '3': f'🐰',
+            '4': f'🐲',
+            '5': f'🐍',
+            '6': f'🐴',
+            '7': f'🐏',
+            '8': f'🐵',
+            '9': f'🐔',
+            '10': f'🐶',
+            '11': f'🐷'
+        }
+        return animal_map.get(f'{(current_year - 2020) % len(animal_map.keys())}')
     
     def __get_greeting(self):
         current_hour = int(get_current_time('%H'))
@@ -74,7 +92,7 @@ class MsgManager:
             if not corporates:
                 continue
             
-            message += f'🐮 *{industry_name}*\n'
+            message += f'{self.__get_animal()} *{industry_name}*\n'
             for corp in corporates:
                 info = corp_infos.get(corp)
                 message += f'• {info["corp_name"]}\({info["count"]}건\) {self.__get_signal(info["max_total_amount"])}\n'
