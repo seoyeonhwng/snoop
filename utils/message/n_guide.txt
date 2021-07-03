@@ -3,5 +3,5 @@
 
 ✔️ 줄바꿈을 하고 싶으면 n을 입력해줘\!
 
-💡 \/notice \[dev or prd\] 여러분\~부자되세요\!
-   \- 예\) \/notice dev 여러분\~부자되세요\!
+💡 \/notice \[test or live\] 여러분\~n부자되세요\!
+   \- 예\) \/notice test 여러분\~n부자되세요\!

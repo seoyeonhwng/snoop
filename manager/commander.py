@@ -74,7 +74,7 @@ class Commander:
             if not self.__is_valid_value_format(k, v):
                 return k
         return None
-    
+
     def __is_valid_user(self, chat_id):
         user_info = self.db_manager.get_user_info(chat_id)
         if user_info and user_info[0]['is_paid'] and user_info[0]['is_active']:
@@ -391,7 +391,7 @@ class Commander:
             tg_msg,
             update=update
         )
-        
+
         # notice to admins
         tg_msg = f'[신규 회원 도착]\n{nickname}'
         threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
@@ -516,11 +516,11 @@ class Commander:
         result = self.db_manager.insert_row('trading', data)
         tg_msg = f'[/buy {corp_name}] DB insert 성공' if result else f'[/buy {corp_name}] DB insert 실패'
         threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
-        
+
     def tg_sell(self, update, context):
         if str(update.message.chat_id) not in ADMIN_IDS:
             return
-        
+
         buy_date, corp_name, sell_price = context.args
         stock_code = self.db_manager.get_stock_code(corp_name)
         if not stock_code:
@@ -528,16 +528,16 @@ class Commander:
             threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
             return
         stock_code = stock_code[0]['stock_code']
-        
+
         trading_data = self.db_manager.get_trading_data(stock_code, buy_date)
         if not trading_data:
             tg_msg = '해당 매매 존재 안함!!!'
             threading.Thread(target=self.tg_manager.send_warning_message, args=(tg_msg,)).start()
             return
-        
+
         last_price = trading_data[0]['last_price'] if trading_data[0]['last_price'] else trading_data[0]['buy_price']
         profit_ratio = get_profit_ratio(sell_price, last_price, trading_data[0].get('profit_ratio', None))
-        
+
         params = {
             'stock_code': stock_code,
             'buy_date': buy_date,
@@ -560,7 +560,7 @@ class Commander:
 
         # check input condition
         tg_msg = read_message('n_guide.txt')
-        if len(context.args) < 2 or context.args[0] not in ['dev', 'prd']:
+        if len(context.args) < 2 or context.args[0] not in ['test', 'live']:
             context.dispatcher.run_async(
                 self.__log_and_notify,
                 'tg_notice',
@@ -575,8 +575,9 @@ class Commander:
         content = ' '.join(context.args[1:])
         if len(content.split('n')) > 1:
             content = '\n'.join(content.split('n'))
+        content = '\[공지사항\]\n' + content
 
-        if send_type == 'dev':  # admin
+        if send_type == 'test':  # admin
             threading.Thread(target=self.tg_manager.send_all_message, args=(ADMIN_IDS, content,)).start()
         else:  # whole member
             targets = self.db_manager.get_targets()
