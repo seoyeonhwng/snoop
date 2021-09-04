@@ -59,8 +59,8 @@ class Dart:
 
     def get_dcm_no(self, _rcept_no):
         r = requests.get(MAIN_URL + REPORT.format(rcept_no=_rcept_no))
-        for href in BeautifulSoup(r.text, 'html.parser').find('div', class_='view_search').find_all('li')[:1]:
-            return href.find('a')['onclick'].split(' ')[1].replace("'", '').replace(');', '')
+        for b in [a.get('onclick') for a in BeautifulSoup(r.text, 'html.parser').find('div', class_='rightWrap').find_all('button')][:1]:
+            return b.split(' ')[1].replace("'", '').replace(');', '')
 
     def get_target_table(self, _tables):
         for t in _tables:
