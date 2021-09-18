@@ -20,7 +20,7 @@ class Naver:
             self.logger.critical('[ERROR] status code != 200 in get_industry_list')
             return
         
-        exp = r'<a href="/sise/sise_group_detail.nhn\?type=upjong&no=([0-9]+)">(.+)</a>'
+        exp = r'<a href="/sise/sise_group_detail.naver\?type=upjong&no=([0-9]+)">(.+)</a>'
         data = re.findall(exp, resp.text)
 
         industry_list = []
