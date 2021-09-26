@@ -580,8 +580,9 @@ class Commander:
         if send_type == 'test':  # admin
             threading.Thread(target=self.tg_manager.send_all_message, args=(ADMIN_IDS, content,)).start()
         else:  # whole member
-            targets = self.db_manager.get_targets()
-            threading.Thread(target=self.tg_manager.send_all_message, args=(targets, content,)).start()
+            tg_targets = self.db_manager.get_targets()
+            tg_targets = set([t.get('chat_id') for t in tg_targets])
+            threading.Thread(target=self.tg_manager.send_all_message, args=(tg_targets, content,)).start()
 
     # TODO.
     def tg_mail(self, update, context):
